@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'game',
     'channels',
+    'webpack_loader'
 ]
 
 MIDDLEWARE = [
@@ -130,4 +131,12 @@ CHANNEL_LAYERS = {
  "BACKEND": "asgiref.inmemory.ChannelLayer",
  "ROUTING": "battleships.routing.channel_routing",
  },
+}
+
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'BUNDLE_DIR_NAME': '/static/bundles/', # end with slash
+        'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json')
+ 
+    }
 }
