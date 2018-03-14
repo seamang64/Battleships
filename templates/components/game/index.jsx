@@ -1,5 +1,5 @@
 import React from 'react';
-import GameBoard from './GameBoard.jsx'
+//import GameBoard from './GameBoard.jsx'
 import ReactDOM from 'react-dom'
 import $ from 'jquery'
 
