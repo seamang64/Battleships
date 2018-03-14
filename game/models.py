@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 from django.contrib.auth.models import User
 from django.db import models
-from channels import Group
+#from django-channels import Group
 import json
 from datetime import datetime
 
@@ -100,5 +100,5 @@ class User_Shipyard(models.Model):
 	def delete_user_ship(user_id,ship_id):
 		User_Shipyard.objects.get(user_id,ship_id).delete()
 		
-	def get_user_shipyard_size(user_id)
+	def get_user_shipyard_size(user_id):
 		return User_Shipyard.objects.filter(user=user_id).count()
