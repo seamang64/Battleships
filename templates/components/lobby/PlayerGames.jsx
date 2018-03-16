@@ -25,7 +25,7 @@ class PlayerGames extends React.Component{
     renderButton(game){
          if (game.completed){
             return "View"
-         } else if (game.opponent == null && game.creator.id == this.props.player.id){
+         } else if (game.p2 == null && game.p1.id == this.props.player.id){
              return "Waiting..."
          } else{
              return "Play"
@@ -35,8 +35,8 @@ class PlayerGames extends React.Component{
 
     renderOpponent(game){
         console.log(game)
-        if (game.opponent != null){
-            return game.opponent.username
+        if (game.p2 != null){
+            return game.p2.username
         } else {
             return "???"
         }
@@ -47,7 +47,7 @@ class PlayerGames extends React.Component{
             return this.props.game_list.map(function(game){
                     return <li key={game.id} className="list-group-item">
                                 <span className="badge pull-left">{game.id}</span>&nbsp;&nbsp;
-                                <span>{game.creator.username}</span> vs <span>{this.renderOpponent(game)}</span>
+                                <span>{game.p1.username}</span> vs <span>{this.renderOpponent(game)}</span>
 
                                 <a className="btn btn-sm btn-primary pull-right" href={"/game/"+game.id+"/"}>{this.renderButton(game)}</a>
                             </li>
@@ -85,8 +85,8 @@ PlayerGames.defaultProps = {
 };
 
 PlayerGames.propTypes = {
-    game_list: React.PropTypes.array,
-    player: React.PropTypes.object
+    //game_list: React.PropTypes.array,
+    //player: React.PropTypes.object
 };
 
 

@@ -7,8 +7,8 @@ from datetime import datetime
 
 class Game(models.Model): #models game information not including the board
 	winner = models.IntegerField(default=0) #0 for no one, 1 for player 1, 2 for player 2
-	p1 = models.ForeignKey(User, related_name='p1') #player 1 identification, set to game creator
-	p2 = models.ForeignKey(User, related_name='p2', null=True, blank=True) #player 2 identification, initially null
+	p1 = models.ForeignKey(User, related_name='p1', on_delete=models.CASCADE) #player 1 identification, set to game creator
+	p2 = models.ForeignKey(User, related_name='p2', null=True, blank=True, on_delete=models.CASCADE) #player 2 identification, initially null
 	num_cols = models.IntegerField(default=10) #number of rows of one players side of the board, size can be chosen but initially 8
 	num_rows = models.IntegerField(default=10) #same for columns
 	player_turn = models.IntegerField(default=1) #1 if player one's turn, 2 if player 2's
@@ -42,11 +42,11 @@ class Game(models.Model): #models game information not including the board
 	
 	
 class Cell(models.Model): #models every cell in every game
-	game = models.ForeignKey(Game) #links each cell to a game
+	game = models.ForeignKey(Game, on_delete=models.CASCADE) #links each cell to a game
 	x = models.IntegerField(default=0) #x-coordinate of cell
 	y = models.IntegerField(default=0) #y-coordinate of cell
 	state = models.CharField(max_length=20, default='sea') #eg: 'sea', 'hit', 'miss'
-	user_owner = models.ForeignKey(User) 
+	user_owner = models.ForeignKey(User, on_delete=models.CASCADE) 
 	
 	def get_cell_state(current_game, row, col, user): #returns the state of a cell
 		return Cell.objects.get(game=current_game, x=col, y=row, user_owner=user).state
@@ -91,8 +91,8 @@ class User(models.Model):
 		return User.objects.get(pk=user_id)
 
 class User_Shipyard(models.Model):
-	user = models.ForeignKey(User)
-	ship = models.ForeignKey(Shipyard)
+	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	ship = models.ForeignKey(Shipyard, on_delete=models.CASCADE)
 	
 	def add_user_ship(user_id,ship_id):
 		User_Shipyard(user_id,ship_id).save()

@@ -9,7 +9,7 @@ module.exports = {
           game: './templates/components/game/index'
   },
   output: {
-      path: path.resolve('./static/bundles/'),
+      path: path.resolve('./bundles/'),
       filename: "[name]-[hash].js"
   },
 

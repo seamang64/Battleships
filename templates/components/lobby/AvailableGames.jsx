@@ -18,7 +18,7 @@ class AvailableGames extends React.Component {
     renderGameList() {
         // clear out games owned by this player
         let player_removed = this.props.game_list.filter(function(game) {
-            return game.creator.id !== this.props.player.id
+            return game.p1.id !== this.props.player.id
         }, this);
         
         
@@ -26,7 +26,7 @@ class AvailableGames extends React.Component {
             return player_removed.map(function (game) {
                     return <li key={game.id} className="list-group-item">
                         <span className="badge pull-left">{game.id}</span>&nbsp; &nbsp;
-                        <span>{game.creator.username} vs???</span>
+                        <span>{game.p1.username} vs???</span>
                         <a className="btn btn-sm btn-primary pull-right" href={"/game/"+game.id+"/"}>Play</a>
                     </li>
             }, this)
@@ -62,8 +62,8 @@ AvailableGames.defaultProps = {
 };
 
 AvailableGames.propTypes = {
-    game_list: React.PropTypes.array,
-    player: React.PropTypes.object
+    //game_list: React.PropTypes.array,
+    //player: React.PropTypes.object
 
 };
 
