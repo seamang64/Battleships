@@ -19,7 +19,7 @@ class LobbyBase extends React.Component {
     }
 
     getPlayerGames(){
-        this.serverRequest = $.get('http://localhost:8080/player-games/?format=json', function (result) {
+        this.serverRequest = $.get('http://127.0.0.1:8080/player-games/?format=json', function (result) {
            this.setState({
             player_game_list: result,
              })
@@ -27,7 +27,7 @@ class LobbyBase extends React.Component {
     }
 
     getAvailableGames(){
-        this.serverRequest = $.get('http://localhost:8080/available-games/?format=json', function (result) {
+        this.serverRequest = $.get('http://127.0.0.1:8080/available-games/?format=json', function (result) {
            this.setState({
             available_game_list: result
              })
@@ -55,8 +55,10 @@ class LobbyBase extends React.Component {
 
     sendSocketMessage(message){
         // sends message to channels back-end
-       const socket = this.refs.socket
-       socket.state.ws.send(JSON.stringify(message))
+		//alert("Hello")
+		const socket = this.refs.socket
+        socket.state.ws.send(JSON.stringify(message));
+		//alert(JSON.stringify(message));
     }
 
     render() {
@@ -67,20 +69,19 @@ class LobbyBase extends React.Component {
                     onMessage={this.handleData.bind(this)} reconnect={true}/>
                 <div className="col-lg-4">
                     <PlayerGames player={this.props.current_user} game_list={this.state.player_game_list}
-                                 sendSocketMessage={this.sendSocketMessage} />
+                                sendSocketMessage={this.sendSocketMessage} />
                 </div>
                 <div className="col-lg-4">
                      <AvailableGames player={this.props.current_user} game_list={this.state.available_game_list}
                                      sendSocketMessage={this.sendSocketMessage} />
                 </div>
             </div>
-
         )
     }
 }
 
 LobbyBase.propTypes = {
-    socket: React.PropTypes.string
+    //socket: React.PropTypes.string
 };
 
 export default LobbyBase;

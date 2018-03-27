@@ -1,104 +1,168 @@
 from __future__ import unicode_literals
 from django.contrib.auth.models import User
 from django.db import models
-#from django-channels import Group
 import json
-from datetime import datetime
 
-class Game(models.Model): #models game information not including the board
-	winner = models.IntegerField(default=0) #0 for no one, 1 for player 1, 2 for player 2
-	p1 = models.ForeignKey(User, related_name='p1') #player 1 identification, set to game creator
-	p2 = models.ForeignKey(User, related_name='p2', null=True, blank=True) #player 2 identification, initially null
-	num_cols = models.IntegerField(default=10) #number of rows of one players side of the board, size can be chosen but initially 8
-	num_rows = models.IntegerField(default=10) #same for columns
-	player_turn = models.IntegerField(default=1) #1 if player one's turn, 2 if player 2's
-	p1_ship_count = models.IntegerField(default=10)
-	p2_ship_count = models.IntegerField(default=10)
-	
-	
-	def get_available_games(): #returns all games which don't yet have a second player
+class Game(models.Model): 
+	p1 = models.ForeignKey(User, related_name='p1', on_delete=models.CASCADE) 
+	p2 = models.ForeignKey(User, related_name='p2', null=True, blank=True, on_delete=models.CASCADE) 
+	num_cols = models.IntegerField(default=10)
+	num_rows = models.IntegerField(default=10)
+	player_turn = models.IntegerField(default=1) 
+	p1_ship_count = models.IntegerField(default=0)
+	p2_ship_count = models.IntegerField(default=0)
+	max_ships = models.IntegerField(default=10)
+	p1_ready = models.BooleanField(default=False)
+	p2_ready = models.BooleanField(default=False)
+
+	def get_available_games():
 		return Game.objects.filter(p2=None)
+	
+	@staticmethod
+	def created_count(user_id):
+		return Game.objects.filter(p1=user_id).count()
+	
+	@staticmethod
+	def get_games_for_player(user_id):
+		from django.db.models import Q
+		return Game.objects.filter(Q(p1=user_id) | Q(p2=user_id))
+	
+	def get_game(game_id):
+		return Game.objects.get(pk=game_id)
 
-	def create_new_game(user, cols, rows): #creates a new game, can specify the size of the board
-		new_game = Game(p1=user, player_turn=1, num_cols=cols, num_rows=rows)
-		new_game.save() #adds the game to the Game model
+	def create_new_game(user, cols, rows, ships):
+		new_game = Game(p1=user, num_cols=cols, num_rows=rows, player_turn=1, p1_ship_count=0, p2_ship_count=0, max_ships=ships, p1_ready=False, p2_ready=False)
+		new_game.save()
 		return new_game
 	
-	def get_game(current_game): #returns the game which has the matching current game's id
-		return Game.objects.get(pk=current_game)
+	def add_p2(game_id,p2_id):
+		Game.objects.filter(pk=game_id).update(p2=p2_id)
 	
-	def set_next_turn(current_game): #alternates whose turn it is to play when called
-		Game.objects.get(pk=current_game).update(player_num=3-F('player_turn'))
+	def delete_game(game_id):
+		Game.objects.filter(pk=game_id).delete()
 	
-	def set_winner(current_game, player_num): #sets the winner field of a game to player 1 or 2
-		Game.objects.get(pk=current_game).update(winner=player_num)
+	def get_player_num(game_id, player_id):
+		game = Game.objects.get(pk=game_id)
+		if player_id == game.p1:
+			return 1
+		elif player_id == game.p2:
+			return 2
+		else:
+			return 0
 	
-	def set_ship_count(current_game, player_id, new_count):
-		game = Game.objects.get(pk=current_game)
+	def set_next_turn(game_id):
+		Game.objects.filter(pk=game_id).update(player_turn=3-F('player_turn'))
+	
+	def set_ship_count(game_id, player_id, new_count):
+		game = Game.objects.filter(pk=game_id)
 		if player_id == game.p1:
 			game.update(p1_ship_count=new_count)
 		if player_id == game.p2:
 			game.update(p2_ship_count=new_count)
 	
+	def get_both_ready(game_id):
+		game = Game.objects.filter(pk=game_id)
+		return game.p1_ready and game.p2_ready
 	
-class Cell(models.Model): #models every cell in every game
-	game = models.ForeignKey(Game) #links each cell to a game
-	x = models.IntegerField(default=0) #x-coordinate of cell
-	y = models.IntegerField(default=0) #y-coordinate of cell
-	state = models.CharField(max_length=20, default='sea') #eg: 'sea', 'hit', 'miss'
-	user_owner = models.ForeignKey(User) 
-	
-	def get_cell_state(current_game, row, col, user): #returns the state of a cell
-		return Cell.objects.get(game=current_game, x=col, y=row, user_owner=user).state
-	
-	def set_cell_state(current_game, row, col, player_num, new_state): #sets the state of a cell
-		Cell.objects.get(game=current_game, x=col, y=row, user_owner=user).update(state=new_state)
-	
-	def create_new_board(game_id, rows, cols, p1_id, p2_id):
-		for player_id in [p1_id, p2_id]:
-			for r in range(0, rows):
-				for c in range(0, cols):
-					new_square = Cell(game=game_id, x=c, y=r, state='sea', user_owner=player_id)
-					new_square.save() #for each player's side of the board it adds a cell to the Cell model
-	
+	def set_ready(game_id, player_id):
+		game = Game.objects.filter(pk=game_id)
+		if player_id == game.p1:
+			game.update(p1_ready=true)
+		if player_id == game.p2:
+			game.update(p2_ready=true)
 
 class Shipyard(models.Model):
 	length = models.IntegerField(default=3)
-	name = models.CharField(max_length=20, default='Submarine')
+	name = models.CharField(max_length=20)
+	
+	def get_all_ships():
+		return Shipyard.objects
+	
+	def get_ship(ship_id):
+		return Shipyard.objects.get(pk=ship_id)
 	
 	def add_new_ship(ship_length,ship_name):
 		Shipyard(length=ship_length, name=ship_name).save()
 		
 	def delete_ship_by_id(ship_id):
-		Shipyard.objects.get(pk=ship_id).delete()
+		Shipyard.objects.filter(pk=ship_id).delete()
 		
 	def delete_ships_by_length(ship_length):
 		Shipyard.objects.filter(length=ship_length).delete()
-	
-	def get_all_ships():
-		return Shipyard.objects
-
-class User(models.Model):
-	username = models.CharField(max_length=30)
-	
-	def create_new_user(name):
-		User(username=name).save()
-	
-	def delete_user(user_id):
-		User.objects.get(pk=user_id).delete()
-		
-	def get_user(user_id):
-		return User.objects.get(pk=user_id)
 
 class User_Shipyard(models.Model):
-	user = models.ForeignKey(User)
-	ship = models.ForeignKey(Shipyard)
+	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	ship = models.ForeignKey(Shipyard, on_delete=models.CASCADE)
+	hit_count = models.IntegerField(default=0)
+	
+	def get_all_user_ships(user_id):
+		return User_Shipyard.objects.filter(user=user_id)
+	
+	def get_ship(user_id,ship_id):
+		return User_Shipyard.objects.get(user=user_id, ship=ship_id)
+	
+	def contains_user_ship(user_id,ship_id):
+		return (User_Shipyard.objects.filter(user=user_id,ship=ship_id) != [])
 	
 	def add_user_ship(user_id,ship_id):
-		User_Shipyard(user_id,ship_id).save()
+		User_Shipyard(user_id,ship_id,0).save()
 		
-	def delete_user_ship(user_id,ship_id):
-		User_Shipyard.objects.get(user_id,ship_id).delete()
+	def delete_all_user_ships(user_id):
+		User_Shipyard.objects.filter(user=user_id).delete()
 		
 	def get_user_shipyard_size(user_id):
 		return User_Shipyard.objects.filter(user=user_id).count()
+	
+	def inc_hit_count(user_id,ship_id):
+		ship = User_Shipyard.objects.get(user=user_id, ship=ship_id)
+		hc = ship.hit_count
+		ship.update(hit_count=hc+1)
+	
+class Cell(models.Model): 
+	game = models.ForeignKey(Game, on_delete=models.CASCADE) 
+	user_owner = models.ForeignKey(User, on_delete=models.CASCADE)
+	board_type = models.IntegerField(default=0)
+	x = models.IntegerField(default=0)
+	y = models.IntegerField(default=0) 
+	state = models.CharField(max_length=20, default='sea') 
+	
+	def get_cell(game_id, user, board_num, row, col): 
+		return Cell.objects.get(game=game_id, user_owner=user, board_type=board_num, x=col, y=row)
+	
+	def set_cell_state(game_id, user, board_num, row, col, new_state): 
+		Cell.objects.filter(game=game_id, user_owner=user, board_type=board_num, x=col, y=row).update(state=new_state)
+	
+	def create_new_board(game_id, rows, cols, p1_id, p2_id):
+		for player_id in [p1_id, p2_id]:
+			for type in [1, 2]:
+				if type == 1: cell_state = 'sea'
+				else: cell_state = 'unknown'
+				for r in range(0, rows):
+					for c in range(0, cols):
+						new_square = Cell(game=game_id, user_owner=player_id, board_type=type, x=c, y=r, state=cell_state)
+						new_square.save() 
+
+	def delete_game_boards(game_id):
+		Cell.objects.filter(game=game_id).delete()
+
+class Battleships_User(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	wins = models.IntegerField(default=0)
+	games_played = models.IntegerField(default=0)
+	
+	def add_user(user_id):
+		Battleships_User(user=user_id, wins=0, games_played=0).save()
+	
+	def delete_user(user_id):
+		Battleships_User.objects.get(user=user_id).delete()
+	
+	def get_user(user_id):
+		return Battleships_User.objects.get(user=user_id)
+	
+	def inc_wins(user_id):
+		Battleships_User.objects.get(user=user_id).update(wins=F('wins')+1)
+	
+	def inc_games_played(user_id):
+		Battleships_User.objects.get(user=user_id).update(games_played=F('games_played')+1)
+	
+	
