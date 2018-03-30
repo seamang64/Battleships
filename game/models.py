@@ -14,6 +14,8 @@ class Game(models.Model):
 	max_ships = models.IntegerField(default=10)
 	p1_ready = models.BooleanField(default=False)
 	p2_ready = models.BooleanField(default=False)
+	last_fired = models.CharField(default='( , )-hit_or_miss',max_length=15)
+	winner = models.IntegerField(default=0)
 
 	def get_available_games():
 		return Game.objects.filter(p2=None)
@@ -31,15 +33,15 @@ class Game(models.Model):
 		return Game.objects.get(pk=game_id)
 
 	def create_new_game(user, cols, rows, ships):
-		new_game = Game(p1=user, num_cols=cols, num_rows=rows, player_turn=1, p1_ship_count=0, p2_ship_count=0, max_ships=ships, p1_ready=False, p2_ready=False)
+		new_game = Game(p1=user, num_cols=cols, num_rows=rows, player_turn=1, p1_ship_count=0, p2_ship_count=0, max_ships=ships, p1_ready=False, p2_ready=False, completed=False)
 		new_game.save()
 		return new_game
 	
 	def add_p2(game_id,p2_id):
 		Game.objects.filter(pk=game_id).update(p2=p2_id)
 	
-	def delete_game(game_id):
-		Game.objects.filter(pk=game_id).delete()
+	def delete_game(game_id,creator_id):
+		Game.objects.filter(pk=game_id,p1=creator_id).delete()
 	
 	def get_player_num(game_id, player_id):
 		game = Game.objects.get(pk=game_id)
@@ -70,6 +72,12 @@ class Game(models.Model):
 			game.update(p1_ready=true)
 		if player_id == game.p2:
 			game.update(p2_ready=true)
+	
+	def set_last_fired(game_id,x,y,hit_or_miss):
+		Game.objects.filter(pk=game_id).update(last_fired='({0},{0})-{0}'.format(x,y,hit_or_miss))
+	
+	def set_winner(game_id,player_num):
+		Game.objects.filter(pk=game_id).update(winner=player_num)
 
 class Shipyard(models.Model):
 	length = models.IntegerField(default=3)
@@ -106,6 +114,9 @@ class User_Shipyard(models.Model):
 	
 	def add_user_ship(user_id,ship_id):
 		User_Shipyard(user_id,ship_id,0).save()
+	
+	def delete_user_ship(user_id,ship_id):
+		User_Shipyard.objects.filter(user=user_id,ship=ship_id).delete()
 		
 	def delete_all_user_ships(user_id):
 		User_Shipyard.objects.filter(user=user_id).delete()
