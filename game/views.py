@@ -3,11 +3,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
-<<<<<<< HEAD
-=======
 from django.contrib.auth import get_user
 from django.contrib import messages
->>>>>>> pr/31
 
 from game.models import Game
 
@@ -44,8 +41,6 @@ class LobbyView(TemplateView):
         # for the player's games, we're returning a list of games with the opponent and id
         player_games = Game.get_games_for_player(self.request.user)
 
-<<<<<<< HEAD
-=======
         return context
 		
 class GameView(TemplateView):
@@ -76,5 +71,4 @@ class GameView(TemplateView):
         context = super(GameView, self).get_context_data(**kwargs)
         context['game'] = self.game
  
->>>>>>> pr/31
         return context

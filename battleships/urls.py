@@ -1,13 +1,4 @@
 # battleships/urls.py
-<<<<<<< HEAD
-from django.conf.urls import include, url
-from django.contrib import admin
-
-urlpatterns = [
-    url(r'^', include('game.urls')),
-    #url(r'^admin/', admin.site.urls),
-]
-=======
 from django.conf.urls import url, include
 from django.contrib import admin
 from game.views import __init__, api_views, views
@@ -35,4 +26,3 @@ router.register(r'player-games', api_views.PlayerGameViewSet, 'player_games')
 router.register(r'available-games', api_views.AvailableGameViewSet, 'available_games')
 
 urlpatterns += router.urls
->>>>>>> pr/31

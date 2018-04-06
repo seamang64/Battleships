@@ -1,19 +1,12 @@
 from django.views.generic import CreateView, TemplateView
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login
-<<<<<<< HEAD
-from django.utils.decorators import method_decorator
-from django.contrib.auth.decorators import login_required
-
-from game.models import Game
-=======
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user
 from django.contrib import messages
 from game.models import Game, Cell
->>>>>>> pr/31
 
 class HomeView(TemplateView):
     template_name = 'home.html'
@@ -46,10 +39,6 @@ class LobbyView(TemplateView):
         # we're creating a list of games that contains just the id (for the link) and the creator
         available_games = [{'creator': game.p1.username, 'id': game.pk} for game in Game.get_available_games()]
         # for the player's games, we're returning a list of games with the opponent and id
-<<<<<<< HEAD
-        #player_games = Game.get_games_for_player(self.request.user)
-
-=======
         player_games = Game.get_games_for_player(self.request.user)
 
         return context
@@ -83,5 +72,4 @@ class GameView(TemplateView):
         context = super(GameView, self).get_context_data(**kwargs)
         context['game'] = self.game
  
->>>>>>> pr/31
         return context
