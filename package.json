@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 {
   "name": "mysite",
   "version": "1.0.0",
@@ -10,16 +9,3 @@
   "author": "",
   "license": "ISC"
 }
-=======
-{
-  "name": "mysite",
-  "version": "1.0.0",
-  "description": "",
-  "main": "webpack.config.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC"
-}
->>>>>>> pr/31

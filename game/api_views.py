@@ -30,8 +30,6 @@ class PlayerGameViewSet(viewsets.ViewSet):
         queryset = Game.get_games_for_player(self.request.user)
         serializer = GameSerializer(
             queryset, many=True, context={'request': request})
-<<<<<<< HEAD
-=======
         return Response(serializer.data)
 		
 class AvailableGameViewSet(viewsets.ViewSet):
@@ -42,5 +40,4 @@ class AvailableGameViewSet(viewsets.ViewSet):
     def list(self, request):
         queryset = Game.get_available_games()
         serializer = GameSerializer(queryset, many=True)
->>>>>>> pr/31
         return Response(serializer.data)

@@ -15,10 +15,6 @@ class PlayerGames extends React.Component{
     }
 
     onCreateGameClick(event) {
-<<<<<<< HEAD
-		//alert("clicked");
-=======
->>>>>>> pr/31
         this.props.sendSocketMessage({action: "create_game", player: this.props.player.username});
     }
 
