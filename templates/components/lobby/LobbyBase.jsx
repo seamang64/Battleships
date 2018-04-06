@@ -54,11 +54,17 @@ class LobbyBase extends React.Component {
     }
 
     sendSocketMessage(message){
+<<<<<<< HEAD
         // sends message to channels back-end
 		//alert("Hello")
 		const socket = this.refs.socket
         socket.state.ws.send(JSON.stringify(message));
 		//alert(JSON.stringify(message));
+=======
+        // sends message to channels back-end
+		const socket = this.refs.socket
+        socket.state.ws.send(JSON.stringify(message));
+>>>>>>> pr/31
     }
 
     render() {

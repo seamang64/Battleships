@@ -6,7 +6,11 @@ module.exports = {
   context: __dirname,
   entry: {
           lobby: './templates/components/lobby/index',
+<<<<<<< HEAD
           //game: './templates/components/game/index'
+=======
+          game: './templates/components/game/index'
+>>>>>>> pr/31
   },
   output: {
       path: path.resolve('./static/bundles/'),
