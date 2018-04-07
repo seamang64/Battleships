@@ -35,15 +35,15 @@ class LobbyConsumer(WebsocketConsumer):
 		action = content['action']
 		
 		if action == 'create_game':
+			player = User.objects.get(username=ast.literal_eval(text_data)['player'])
+			Game.create_new_game(player, 10, 10, 5)
+			User_Shipyard.delete_all_user_ships(player)
 			async_to_sync(self.channel_layer.group_send)(
 				self.room_group_name,
 				{
 					'type': 'new_game'
 				}
 			)
-			player = User.objects.get(username=ast.literal_eval(text_data)['player'])
-			Game.create_new_game(player, 10, 10, 5)
-			User_Shipyard.delete_all_user_ships(player)
 
 		if action == 'delete_game':
 			Game.delete_game(content['game_id'],slef.message.user)
@@ -93,11 +93,23 @@ class GameConsumer(JsonWebsocketConsumer):
 	def connect(self, **kwargs):
 		#self.room_name = self.scope['url_route']['kwargs']['room_name']
 		self.room_group_name = 'user-' + str(self.scope['user'].id)
+		#self.room_group_name = 'game-' + str(self.scope['game'].id)
 		
 		async_to_sync(self.channel_layer.group_add)(
 			self.room_group_name,
 			self.channel_name
 		)
+		
+		user = User.objects.get(pk=str(self.scope['user'].id))
+		if (len(Game.objects.filter(p1=user)) > 0): my_game = Game.objects.filter(p1=user)[0]
+		else: my_game = Game.objects.filter(p2=user)[0]
+		
+		async_to_sync(self.channel_layer.group_add)(
+			'game-' + str(my_game.id),
+			self.channel_name
+		)
+		
+		print('game-' + str(my_game.id))
 		
 		self.accept()
 
@@ -204,10 +216,23 @@ class GameConsumer(JsonWebsocketConsumer):
 									Game.set_winner(game_id,player_num)
 						Cell.set_cell_state(game_id, opponent_id, 1, row, col, opponent_cell_state+'-fired_at')
 						Game.set_next_turn(game_id, player_num)
-		
+			#self.send(text_data=json.dumps({'instuction': 'update_cells'}))
+			user = User.objects.get(pk=str(self.scope['user'].id))
+			if (len(Game.objects.filter(p1=user)) > 0): my_game = Game.objects.filter(p1=user)[0]
+			else: my_game = Game.objects.filter(p2=user)[0]
+			
+			async_to_sync(self.channel_layer.group_send)(
+				'game-' + str(my_game.id),
+				{
+					'type': 'fire'
+				}
+			)
+			
+	def fire(self, event):
+		self.send(text_data=json.dumps({'instruction': 'fire'}))
+			
 	def disconnect(self, message, **kwargs):
 		"""
 		Perform things on connection close
 		"""
 		pass
-		

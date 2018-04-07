@@ -35,9 +35,8 @@ class LobbyBase extends React.Component {
     }
 
     componentDidMount() {
-       this.getPlayerGames()
-       this.getAvailableGames()
-
+		this.getPlayerGames()
+		this.getAvailableGames()
     }
 
     componentWillUnmount() {
@@ -48,6 +47,7 @@ class LobbyBase extends React.Component {
         //receives messages from the connected websocket
         let result = JSON.parse(data)
         // new games, so get an updated list of this player's game
+		//alert("I'm getting the data")
         this.getPlayerGames()
         // we've received an updated list of available games
         this.setState({available_game_list: result})

@@ -64,6 +64,7 @@ class GameBoard extends Component {
 		if (result.player_num != null) {
 			this.setState( {player_num : result.player_num})
 		}
+		if (result["instruction"] != null) this.tempFix()
     }
  
     sendSocketMessage(message){
