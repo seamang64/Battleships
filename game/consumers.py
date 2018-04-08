@@ -192,22 +192,26 @@ class GameConsumer(JsonWebsocketConsumer):
 						if opponent_cell_state == 'sea':
 							Cell.set_cell_state(game_id, self.scope['user'], 2, row, col, 'miss')
 							Game.set_last_fired(game_id,col,row,'miss')
+							Cell.set_cell_state(game_id, opponent, 1, row, col, opponent_cell_state+'-fired_at')
 						else:
 							Cell.set_cell_state(game_id, self.scope['user'], 2, row, col, 'hit')
 							Game.set_last_fired(game_id,col,row,'hit')
+							Cell.set_cell_state(game_id, opponent, 1, row, col, opponent_cell_state+'-fired_at')
 							ship_id = int(opponent_cell_state)
 							User_Shipyard.inc_hit_count(opponent,ship_id)
 							ship_length = Shipyard.get_ship(ship_id).length
 							if ship_length == User_Shipyard.get_ship(opponent,ship_id).hit_count:
 								Game.set_ship_count(game_id, opponent, opponent_ship_count-1)
+								Cell.sink_ship(game_id, ship_id, self.scope['user'], opponent)
 								if opponent_ship_count == 1:
 									#Battleships_User.inc_games_played(self.scope['user'])
 									#Battleships_User.inc_games_played(opponent_id)
 									#Battleships_User.inc_wins(self.scope['user'])
 									Game.set_winner(game_id,player_num)
-						Cell.set_cell_state(game_id, opponent, 1, row, col, opponent_cell_state+'-fired_at')
 						Game.set_next_turn(game_id, player_num)
-		
+						
+					
+				
 		if action == 'update':
 			game_id = content['game_id']
 			game = Game.get_game(game_id)

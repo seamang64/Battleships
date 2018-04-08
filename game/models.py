@@ -110,6 +110,7 @@ class User_Shipyard(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
 	ship = models.ForeignKey(Shipyard, on_delete=models.CASCADE)
 	hit_count = models.IntegerField(default=0)
+	sunk = models.BooleanField(default=False)
 	
 	def get_all_user_ships(user_id):
 		return User_Shipyard.objects.filter(user=user_id)
@@ -136,7 +137,10 @@ class User_Shipyard(models.Model):
 		ship = User_Shipyard.objects.get(user=user_id, ship=ship_id)
 		hc = ship.hit_count
 		ship.hit_count=hc+1
+		if ship.hit_count==Shipyard.get_ship(ship_id).length:
+			ship.sunk=True
 		ship.save()
+
 	
 class Cell(models.Model): 
 	game = models.ForeignKey(Game, on_delete=models.CASCADE) 
@@ -164,6 +168,15 @@ class Cell(models.Model):
 
 	def delete_game_boards(game_id):
 		Cell.objects.filter(game=game_id).delete()
+		
+	def sink_ship(game_id, ship_id, player, opponent):
+		game = Game.get_game(game_id)
+		for x in range (0, game.num_cols):
+			for y in range (0, game.num_rows):
+				if (Cell.get_cell(game_id, opponent, 1, y, x).state == str(ship_id) +'-fired_at'):
+					Cell.set_cell_state(game_id, opponent, 1, y, x, str(ship_id) + "-sunk")
+					Cell.set_cell_state(game_id, player, 2, y, x, "sunk")
+		
 
 class Battleships_User(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
