@@ -41,6 +41,8 @@ class GameCell extends Component {
 				return unknown_img //change this undecided how to represent
 			}else if(this.state.cell_state.includes('fired_at')) {
 				return ship_hit_img
+			}else if(this.state.cell_state.includes('sunk')) {
+				return ship_sunk_img
 			}else{
 				return ship_img
 			}
@@ -50,6 +52,8 @@ class GameCell extends Component {
 				return unknown_img
 			}else if(this.state.cell_state == 'hit') {
 				return ship_hit_img
+			} else if (this.state.cell_state == 'sunk') {
+				return ship_sunk_img
 			}else {
 				return sea_img
 			}
@@ -71,7 +75,7 @@ class GameCell extends Component {
 				}
 			}
 		}
-		this.props.fix()
+		this.props.sendSocketMessage({action: "update", game_id: this.state.game_id})
     }
 
    

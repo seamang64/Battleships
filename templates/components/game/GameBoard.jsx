@@ -13,7 +13,7 @@ class GameBoard extends Component {
         this.state = {
             game: null,
             cells: null,
-			shipyard: [],
+			shipyard: null,
 			vertical: false,
 			player_num: 0,
 			cur_ship: 1,
@@ -26,13 +26,13 @@ class GameBoard extends Component {
 		this.shipRotate = this.shipRotate.bind(this);
 		this.shipConfirm = this.shipConfirm.bind(this);
 		this.getGame = this.getGame.bind(this);
-		this.tempFix = this.tempFix.bind(this);
+		this.updateGame = this.updateGame.bind(this);
  
     }
  
     componentDidMount() {
         this.getGame()
-		//this.tempFix()
+		//this.updateGame()
     }
  
     componentWillUnmount() {
@@ -64,6 +64,9 @@ class GameBoard extends Component {
 		if (result.player_num != null) {
 			this.setState( {player_num : result.player_num})
 		}
+		if (result.instruction == 'update') {
+			this.updateGame()
+		}
     }
  
     sendSocketMessage(message){
@@ -93,10 +96,10 @@ class GameBoard extends Component {
 				this.setState({ player_ready: true});
 			}
 		}
-		this.getGame()
+		this.sendSocketMessage({action: "update", game_id: this.props.game_id})
 	}
 	
-	tempFix(){
+	updateGame(){
 		this.sendSocketMessage({action: "get_cells", game_id: this.props.game_id});
 		this.sendSocketMessage({action: "get_player_num", game_id: this.props.game_id});
 		this.getGame();
@@ -104,8 +107,8 @@ class GameBoard extends Component {
     // ----  RENDER FUNCTIONS ---- //
     // --------------------------- //
  
-    instruction(){  //TO BE IMPROVED
-        if (this.state.game != null){
+    instruction(){
+        if (this.state.game != null && this.state.shipyard != null){
             if (this.state.game.winner != 0){
                 // game is over
 				if (this.state.game.winner==1){
@@ -115,16 +118,18 @@ class GameBoard extends Component {
 				}
 			}else if((this.state.game.p1_ready && this.state.game.p2_ready)){
 				if(this.state.game.player_turn == 1){
-					return <h3>Current Turn: 
+					return <h3>Current Turn:&nbsp;
 						<span className="text-primary">{(this.state.game.p1.username)}</span>
 					 </h3>
 				}else{
-					return <h3>Current Turn: 
+					return <h3>Current Turn:&nbsp;
 						<span className="text-primary">{(this.state.game.p2.username)}</span>
 					 </h3>
 				}
+			}else if(this.state.player_ready) {
+				return <h3> Awaiting opponent ship placement. </h3>
 			}else{
-				return <h3>Place your ships</h3>
+				return <h3>Place your {(this.state.shipyard[this.state.cur_ship - 1].name)} ({(this.state.shipyard[this.state.cur_ship - 1].length)})</h3>
 			}
 		}
 	}
@@ -159,7 +164,7 @@ class GameBoard extends Component {
 			for (var y = 0; y<this.state.game.num_rows; y++) {
 				var rowarr = [];
 				for (var x=0; x<this.state.game.num_cols; x++) {
-					rowarr.push(<GameCell game_id={this.state.game.id} game_started={(this.state.game.p1_ready && this.state.game.p2_ready)} player_ready={this.state.player_ready} x={x} y={y} cell_side={side} cell_state={this.state.cells[side.toString()][x.toString()][y.toString()]} ship_id={this.state.cur_ship} vertical={this.state.vertical} sendSocketMessage={this.sendSocketMessage} isPlayerTurn={this.isPlayerTurn} fix={this.tempFix}/>);
+					rowarr.push(<GameCell game_id={this.state.game.id} game_started={(this.state.game.p1_ready && this.state.game.p2_ready)} player_ready={this.state.player_ready} x={x} y={y} cell_side={side} cell_state={this.state.cells[side.toString()][x.toString()][y.toString()]} ship_id={this.state.cur_ship} vertical={this.state.vertical} sendSocketMessage={this.sendSocketMessage} isPlayerTurn={this.isPlayerTurn} fix={this.updateGame}/>);
 				}
 				boardarr.push(<tr key={y}>{rowarr}</tr>)
 			}
@@ -173,7 +178,6 @@ class GameBoard extends Component {
 	render(){
         return (
             <div className="row">
-				<button onClick={() => { this.tempFix() }}>Start Game... (temporary fix)</button>
                 <div className="col-sm-6"> 
                     {this.instruction()}
                     <table>
