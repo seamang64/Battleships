@@ -2,11 +2,9 @@ from channels.generic.websocket import WebsocketConsumer, JsonWebsocketConsumer
 from django.contrib.auth.models import User
 import json
 from asgiref.sync import async_to_sync
-from .models import Game, User, User_Shipyard, Battleships_User, Cell
+from .models import Game, User
 from .serializers import *
 import ast
-from channels.layers import get_channel_layer
-
 
 class LobbyConsumer(WebsocketConsumer):
 
@@ -91,8 +89,8 @@ class GameConsumer(JsonWebsocketConsumer):
 	http_user = True
 
 	def connect(self, **kwargs):
-		#self.room_name = self.scope['url_route']['kwargs']['room_name']
-		self.room_group_name = 'user-' + str(self.scope['user'].id)
+		self.room_name = self.scope['url_route']['kwargs']['room_name']
+		self.room_group_name = 'user-' + format(self.message.user)
 		
 		async_to_sync(self.channel_layer.group_add)(
 			self.room_group_name,
@@ -132,7 +130,6 @@ class GameConsumer(JsonWebsocketConsumer):
 								y = i
 							Cell.set_cell_state(game_id, self.scope['user'], 1, start_row+y, start_col+x, '{0}'.format(ship_id))
 						Game.set_ship_count(game_id,self.scope['user'],ship_count+1)
-
 		
 		if action == 'remove_ship':
 			game_id = content['game_id']
@@ -140,31 +137,23 @@ class GameConsumer(JsonWebsocketConsumer):
 			game = Game.get_game(game_id)
 			for i in range(0,game.num_cols):
 				for j in range(0,game.num_rows):
-					if Cell.get_cell(game_id, self.scope['user'], 1, j, i).state == str(ship_id):
-						Cell.set_cell_state(game_id, self.scope['user'], 1, j, i, 'sea')
-			User_Shipyard.delete_user_ship(self.scope['user'],ship_id)
+					if Cell.get_cell(game_id, self.message.user, 1, j, i).state == ship_id:
+						Cell.set_cell_state(game_id, self.message.user, 1, j, i, 'sea')
+			User_Shipyard.delete_user_ship(self.message.user,ship_id)
 		
-		if action == 'get_cells': #edited to return dictionary containing all cell states for the requested user dictform [side][x][y] = state
-			message = {}
-			game = Game.get_game(content['game_id'])
-			for board_num in [1,2]:
-				message[str(board_num-1)] = {}
-				for x in range (0, game.num_cols):
-					message[str(board_num-1)][str(x)] = {}
-					for y in range(0, game.num_rows):
-						cell_state = Cell.get_cell(content['game_id'], self.scope['user'], board_num, y, x).state
-						message[str((board_num-1))][str(x)][str(y)] = cell_state
-			messagefinal = {'cells' : message}
-			self.send(text_data=json.dumps(messagefinal))
+		if action == 'get_cell':
+			cell_state = Cell.get_cell(content['game_id'], self.message.user, content['board_num'], content['row'], content['col']).state
+			message = {'cell_state': '{0}'.format(cell_state)}
+			self.send(text_data=json.dumps(message))
 		
 		if action == 'ready_to_start':
-			Game.set_ready(content['game_id'], self.scope['user'].id)
+			set_ready(content['game_id'], self.message.user)
 		
 		if action == 'get_turn':
 			self.send(text_data=json.dumps({'player_turn': '{0}'.format(Game.get_game(content['game_id']).player_turn)}))
 		
 		if action == 'get_player_num':
-			self.send(text_data=json.dumps({'player_num': '{0}'.format(Game.get_player_num(content['game_id'],self.scope['user']))}))
+			self.send(text_data=json.dumps({'player_num': '{0}'.format(Game.get_player_num(content['game_id'],self.message.user))}))
 		
 		if action == 'get_last_fired':
 			self.send(text_data=json.dumps({'last_fired': Game.get_game(content['game_id']).last_fired}))
@@ -226,4 +215,3 @@ class GameConsumer(JsonWebsocketConsumer):
 		Perform things on connection close
 		"""
 		pass
-		
