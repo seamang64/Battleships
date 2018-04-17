@@ -42,6 +42,9 @@ class LobbyView(TemplateView):
         player_games = Game.get_games_for_player(self.request.user)
 
         return context
+		
+class CreateGameView(TemplateView):
+		template_name = 'components/lobby/create_game.html'
 
 class GameView(TemplateView):
     template_name = 'components/game/game.html'

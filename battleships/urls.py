@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'^lobby/$', views.LobbyView.as_view()),
     url(r'^$', views.HomeView.as_view()),
 	url(r'^game/(?P<game_id>\d+)/$', views.GameView.as_view()),
+	url(r'creategame/$', views.CreateGameView.as_view()),
 ]
 
 urlpatterns += [

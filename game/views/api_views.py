@@ -50,7 +50,18 @@ class SingleGameViewSet(APIView):
 	def get(self, request, **kwargs):
 		game = Game.get_game(kwargs['game_id'])
 		#cells = Cell.objects.filter(game==kwargs['game_id'])
-		shipyard = Shipyard.objects.all() #add apramtereisataition here (spelling...)
+		#shipyard = Shipyard.objects.all()
+		shipyard = []
+		for i in range(0, game.ships_of_size_1):
+			shipyard.append(Shipyard.objects.get(length=1))
+		for i in range(0, game.ships_of_size_2):
+			shipyard.append(Shipyard.objects.get(length=2))
+		for i in range(0, game.ships_of_size_3):
+			shipyard.append(Shipyard.objects.get(length=3))
+		for i in range(0, game.ships_of_size_4):
+			shipyard.append(Shipyard.objects.get(length=4))
+		for i in range(0, game.ships_of_size_5):
+			shipyard.append(Shipyard.objects.get(length=5))
 		game_serializer = GameSerializer(game)
 		#cell_serializer = CellSerializer(cells, many=True)
 		shipyard_serializer = ShipyardSerializer(shipyard, many=True)

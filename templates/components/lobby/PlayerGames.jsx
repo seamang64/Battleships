@@ -9,15 +9,9 @@ class PlayerGames extends React.Component{
       }
 
       // bind button click
-     this.onCreateGameClick = this.onCreateGameClick.bind(this);
      this.renderButton = this.renderButton.bind(this);
      this.renderOpponent = this.renderOpponent.bind(this)
     }
-
-    onCreateGameClick(event) {
-        this.props.sendSocketMessage({action: "create_game", player: this.props.player.username});
-    }
-
 
     componentWillReceiveProps(newProp){
         this.setState({game_list: newProp.game_list})
@@ -65,7 +59,7 @@ class PlayerGames extends React.Component{
           <div className="panel panel-primary">
                 <div className="panel-heading">
                     <span>Your Games</span>
-                    <a href="#" className="pull-right badge" onClick={this.onCreateGameClick} id="create_game">Start New Game</a>
+                     <a href="/creategame/" className="pull-right badge" id="create_game">Start New Game</a>
                 </div>
                 <div className="panel-body">
                     <div>
