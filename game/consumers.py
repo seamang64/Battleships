@@ -35,15 +35,20 @@ class LobbyConsumer(WebsocketConsumer):
 		action = content['action']
 		
 		if action == 'create_game':
+			player = User.objects.get(username=ast.literal_eval(text_data)['player'])
+			shipyard = content['shipyard']
+			max = int(shipyard[0]) + int(shipyard[1]) + int(shipyard[2]) + int(shipyard[3]) + int(shipyard[4])
+			print(max)
+			game = Game.create_new_game(player, content['height'], content['width'], max, content['shipyard'])
+			User_Shipyard.delete_all_user_ships(player)
 			async_to_sync(self.channel_layer.group_send)(
 				self.room_group_name,
 				{
-					'type': 'new_game'
+					'type': 'new_game',
+					'player': game.p1.username,
+					'game': game.id
 				}
 			)
-			player = User.objects.get(username=ast.literal_eval(text_data)['player'])
-			Game.create_new_game(player, 10, 10, 5)
-			User_Shipyard.delete_all_user_ships(player)
 
 		if action == 'delete_game':
 			Game.delete_game(content['game_id'],slef.message.user)
@@ -83,7 +88,9 @@ class LobbyConsumer(WebsocketConsumer):
 	def new_game(self, event):
 		avail_game_list = Game.get_available_games()
 		avail_serializer = GameSerializer(avail_game_list, many=True)
+		other_data = {'player': event['player'], 'game': event['game']}
 		self.send(text_data=json.dumps(avail_serializer.data))
+		self.send(text_data=json.dumps(other_data))
 		
 
 class GameConsumer(JsonWebsocketConsumer):
@@ -122,17 +129,24 @@ class GameConsumer(JsonWebsocketConsumer):
 			if not Game.get_both_ready(game_id):
 				ship_count = User_Shipyard.get_user_shipyard_size(self.scope['user'])
 				if ship_count < game.max_ships:
-					if not User_Shipyard.contains_user_ship(self.scope['user'],ship_id):
-						User_Shipyard.add_user_ship(self.scope['user'].id,ship_id)
-						for i in range(0,ship.length):
-							x = i
-							y = 0
-							if content['vertical'] == 'true': #note bool passed as string due to bug in literal_eval
-								x = 0
-								y = i
-							Cell.set_cell_state(game_id, self.scope['user'], 1, start_row+y, start_col+x, '{0}'.format(ship_id))
-						Game.set_ship_count(game_id,self.scope['user'],ship_count+1)
+					User_Shipyard.add_user_ship(self.scope['user'].id,ship_id)
+					for i in range(0,ship.length):
+						x = i
+						y = 0
+						if content['vertical'] == 'true': #note bool passed as string due to bug in literal_eval
+							x = 0
+							y = i
+						Cell.set_cell_state(game_id, self.scope['user'], 1, start_row+y, start_col+x, '{0}'.format(ship_id))
 
+		if action == 'confirm':
+			game_id = content['game_id']
+			game = Game.get_game(game_id)
+			for i in range(0,game.num_cols):
+				for j in range(0,game.num_rows):
+					cell = Cell.get_cell(game_id, self.scope['user'], 1, j, i)
+					if cell.state != 'sea':
+						cell.set = True;
+						cell.save()
 		
 		if action == 'remove_ship':
 			game_id = content['game_id']
@@ -140,7 +154,8 @@ class GameConsumer(JsonWebsocketConsumer):
 			game = Game.get_game(game_id)
 			for i in range(0,game.num_cols):
 				for j in range(0,game.num_rows):
-					if Cell.get_cell(game_id, self.scope['user'], 1, j, i).state == str(ship_id):
+					cell = Cell.get_cell(game_id, self.scope['user'], 1, j, i)
+					if cell.state == str(ship_id) and not cell.set:
 						Cell.set_cell_state(game_id, self.scope['user'], 1, j, i, 'sea')
 			User_Shipyard.delete_user_ship(self.scope['user'],ship_id)
 		

@@ -12,6 +12,11 @@ class Game(models.Model):
 	p1_ship_count = models.IntegerField(default=0)
 	p2_ship_count = models.IntegerField(default=0)
 	max_ships = models.IntegerField(default=10)
+	ships_of_size_1 = models.IntegerField(default=0)
+	ships_of_size_2 = models.IntegerField(default=0)
+	ships_of_size_3 = models.IntegerField(default=0)
+	ships_of_size_4 = models.IntegerField(default=0)
+	ships_of_size_5 = models.IntegerField(default=0)
 	p1_ready = models.BooleanField(default=False)
 	p2_ready = models.BooleanField(default=False)
 	last_fired = models.CharField(default='( , )-hit_or_miss',max_length=15)
@@ -32,8 +37,8 @@ class Game(models.Model):
 	def get_game(game_id):
 		return Game.objects.get(pk=game_id)
 
-	def create_new_game(user, cols, rows, ships):
-		new_game = Game(p1=user, num_cols=cols, num_rows=rows, player_turn=1, p1_ship_count=0, p2_ship_count=0, max_ships=ships, p1_ready=False, p2_ready=False, last_fired='( , )-hit_or_miss', winner=0)
+	def create_new_game(user, cols, rows, max, ships):
+		new_game = Game(p1=user, num_cols=cols, num_rows=rows, player_turn=1, p1_ship_count=max, p2_ship_count=max, max_ships=max, ships_of_size_1=ships[0], ships_of_size_2=ships[1], ships_of_size_3=ships[2], ships_of_size_4=ships[3], ships_of_size_5=ships[4], p1_ready=False, p2_ready=False, last_fired='( , )-hit_or_miss', winner=0)
 		new_game.save()
 		return new_game
 	
@@ -148,7 +153,8 @@ class Cell(models.Model):
 	board_type = models.IntegerField(default=0)
 	x = models.IntegerField(default=0)
 	y = models.IntegerField(default=0) 
-	state = models.CharField(max_length=20, default='sea') 
+	state = models.CharField(max_length=20, default='sea')
+	set = models.BooleanField(default=False)
 	
 	def get_cell(game_id, user, board_num, row, col): 
 		return Cell.objects.get(game_id=game_id, user_owner=user, board_type=board_num, x=col, y=row)
