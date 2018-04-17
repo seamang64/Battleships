@@ -120,6 +120,7 @@ class GameConsumer(JsonWebsocketConsumer):
 		action = content['action']
 		
 		if action == 'placeship':
+			print("Placing")
 			game_id = content['game_id']
 			start_row = content['start_row']
 			start_col = content['start_col']
@@ -128,15 +129,16 @@ class GameConsumer(JsonWebsocketConsumer):
 			ship = Shipyard.get_ship(ship_id)
 			if not Game.get_both_ready(game_id):
 				ship_count = User_Shipyard.get_user_shipyard_size(self.scope['user'])
-				if ship_count < game.max_ships:
-					User_Shipyard.add_user_ship(self.scope['user'].id,ship_id)
-					for i in range(0,ship.length):
-						x = i
-						y = 0
-						if content['vertical'] == 'true': #note bool passed as string due to bug in literal_eval
-							x = 0
-							y = i
-						Cell.set_cell_state(game_id, self.scope['user'], 1, start_row+y, start_col+x, '{0}'.format(ship_id))
+				print("Ready")
+				yard = User_Shipyard.add_user_ship(self.scope['user'].id,ship_id)
+				print('yard')
+				for i in range(0,ship.length):
+					x = i
+					y = 0
+					if content['vertical'] == 'true': #note bool passed as string due to bug in literal_eval
+						x = 0
+						y = i
+					Cell.set_cell_state(game_id, self.scope['user'], 1, start_row+y, start_col+x, '{0}'.format(yard.id))
 
 		if action == 'confirm':
 			game_id = content['game_id']
@@ -152,12 +154,14 @@ class GameConsumer(JsonWebsocketConsumer):
 			game_id = content['game_id']
 			ship_id = content['ship_id']
 			game = Game.get_game(game_id)
+			yard_id = 0
 			for i in range(0,game.num_cols):
 				for j in range(0,game.num_rows):
 					cell = Cell.get_cell(game_id, self.scope['user'], 1, j, i)
-					if cell.state == str(ship_id) and not cell.set:
+					if cell.state != 'sea' and not cell.set:
+						yard_id = int(cell.state)
 						Cell.set_cell_state(game_id, self.scope['user'], 1, j, i, 'sea')
-			User_Shipyard.delete_user_ship(self.scope['user'],ship_id)
+			User_Shipyard.delete_user_ship(yard_id)
 		
 		if action == 'get_cells': #edited to return dictionary containing all cell states for the requested user dictform [side][x][y] = state
 			message = {}
@@ -212,12 +216,12 @@ class GameConsumer(JsonWebsocketConsumer):
 							Cell.set_cell_state(game_id, self.scope['user'], 2, row, col, 'hit')
 							Game.set_last_fired(game_id,col,row,'hit')
 							Cell.set_cell_state(game_id, opponent, 1, row, col, opponent_cell_state+'-fired_at')
-							ship_id = int(opponent_cell_state)
-							User_Shipyard.inc_hit_count(opponent,ship_id)
-							ship_length = Shipyard.get_ship(ship_id).length
-							if ship_length == User_Shipyard.get_ship(opponent,ship_id).hit_count:
+							yard_id = int(opponent_cell_state)
+							User_Shipyard.inc_hit_count(yard_id)
+							ship_length = User_Shipyard.objects.get(id=yard_id).ship.length
+							if ship_length == User_Shipyard.get_ship(yard_id).hit_count:
 								Game.set_ship_count(game_id, opponent, opponent_ship_count-1)
-								Cell.sink_ship(game_id, ship_id, self.scope['user'], opponent)
+								Cell.sink_ship(game_id, yard_id, self.scope['user'], opponent)
 								if opponent_ship_count == 1:
 									#Battleships_User.inc_games_played(self.scope['user'])
 									#Battleships_User.inc_games_played(opponent_id)

@@ -120,17 +120,19 @@ class User_Shipyard(models.Model):
 	def get_all_user_ships(user_id):
 		return User_Shipyard.objects.filter(user=user_id)
 	
-	def get_ship(user_id,ship_id):
-		return User_Shipyard.objects.get(user=user_id, ship=ship_id)
+	def get_ship(yard_id):
+		return User_Shipyard.objects.get(id=yard_id)
 	
 	def contains_user_ship(user_id,ship_id):
 		return (User_Shipyard.objects.filter(user=user_id,ship=ship_id).exists())
 	
 	def add_user_ship(user_id,ship_id):
-		User_Shipyard(user=User.objects.get(pk=user_id),ship=Shipyard.get_ship(ship_id),hit_count=0).save()
+		yard = User_Shipyard(user=User.objects.get(pk=user_id),ship=Shipyard.get_ship(ship_id),hit_count=0)
+		yard.save()
+		return yard
 	
-	def delete_user_ship(user_id,ship_id):
-		User_Shipyard.objects.filter(user=user_id,ship=ship_id).delete()
+	def delete_user_ship(yard_id):
+		User_Shipyard.objects.filter(id=yard_id).delete()
 		
 	def delete_all_user_ships(user_id):
 		User_Shipyard.objects.filter(user=user_id).delete()
@@ -138,11 +140,11 @@ class User_Shipyard(models.Model):
 	def get_user_shipyard_size(user_id):
 		return User_Shipyard.objects.filter(user=user_id).count()
 	
-	def inc_hit_count(user_id,ship_id):
-		ship = User_Shipyard.objects.get(user=user_id, ship=ship_id)
+	def inc_hit_count(yard_id):
+		ship = User_Shipyard.objects.get(id=yard_id)
 		hc = ship.hit_count
 		ship.hit_count=hc+1
-		if ship.hit_count==Shipyard.get_ship(ship_id).length:
+		if ship.hit_count==Shipyard.get_ship(ship.ship.id).length:
 			ship.sunk=True
 		ship.save()
 
@@ -175,12 +177,12 @@ class Cell(models.Model):
 	def delete_game_boards(game_id):
 		Cell.objects.filter(game=game_id).delete()
 		
-	def sink_ship(game_id, ship_id, player, opponent):
+	def sink_ship(game_id, yard_id, player, opponent):
 		game = Game.get_game(game_id)
 		for x in range (0, game.num_cols):
 			for y in range (0, game.num_rows):
-				if (Cell.get_cell(game_id, opponent, 1, y, x).state == str(ship_id) +'-fired_at'):
-					Cell.set_cell_state(game_id, opponent, 1, y, x, str(ship_id) + "-sunk")
+				if (Cell.get_cell(game_id, opponent, 1, y, x).state == str(yard_id) +'-fired_at'):
+					Cell.set_cell_state(game_id, opponent, 1, y, x, str(yard_id) + "-sunk")
 					Cell.set_cell_state(game_id, player, 2, y, x, "sunk")
 		
 
