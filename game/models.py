@@ -21,6 +21,7 @@ class Game(models.Model):
 	p2_ready = models.BooleanField(default=False)
 	last_fired = models.CharField(default='( , )-hit_or_miss',max_length=15)
 	winner = models.IntegerField(default=0)
+	bot_game = models.BooleanField(default=False)
 
 	def get_available_games():
 		return Game.objects.filter(p2=None)
@@ -37,16 +38,19 @@ class Game(models.Model):
 	def get_game(game_id):
 		return Game.objects.get(pk=game_id)
 
-	def create_new_game(user, cols, rows, max, ships):
-		new_game = Game(p1=user, num_cols=cols, num_rows=rows, player_turn=1, p1_ship_count=max, p2_ship_count=max, max_ships=max, ships_of_size_1=ships[0], ships_of_size_2=ships[1], ships_of_size_3=ships[2], ships_of_size_4=ships[3], ships_of_size_5=ships[4], p1_ready=False, p2_ready=False, last_fired='( , )-hit_or_miss', winner=0)
+	def create_new_game(user, cols, rows, max, ships, bot):
+		new_game = Game(p1=user, num_cols=cols, num_rows=rows, player_turn=1, p1_ship_count=max, p2_ship_count=max, max_ships=max, ships_of_size_1=ships[0], ships_of_size_2=ships[1], ships_of_size_3=ships[2], ships_of_size_4=ships[3], ships_of_size_5=ships[4], p1_ready=False, p2_ready=False, last_fired='( , )-hit_or_miss', winner=0, bot_game=bot)
 		new_game.save()
 		return new_game
 	
-	def add_p2(game_id,p2_id):
+	def add_p2(game_id,p2_id):		
 		Game.objects.get(pk=game_id).p2=p2_id
 		Game.objects.get(pk=game_id).save()
 		
 	def delete_game(game_id,creator_id):
+		game = Game.get_game(game_id)
+		if game.bot_game:
+			User.objects.get(pk=game.p2).delete()
 		Game.objects.get(pk=game_id,p1=creator_id).delete()
 	
 	def get_player_num(game_id, player_id):
@@ -97,7 +101,7 @@ class Shipyard(models.Model):
 	name = models.CharField(max_length=20)
 	
 	def get_all_ships():
-		return Shipyard.objects
+		return Shipyard.objects.all()
 	
 	def get_ship(ship_id):
 		return Shipyard.objects.get(pk=ship_id)
@@ -110,6 +114,13 @@ class Shipyard(models.Model):
 		
 	def delete_ships_by_length(ship_length):
 		Shipyard.objects.filter(length=ship_length).delete()
+	
+	def get_ship_by_length(leng):
+		return Shipyard.objects.get(length=leng)
+	
+	def has_ship_of_length(leng):
+		return (Shipyard.objects.filter(length=leng).exists())
+
 
 class User_Shipyard(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -184,7 +195,37 @@ class Cell(models.Model):
 				if (Cell.get_cell(game_id, opponent, 1, y, x).state == str(yard_id) +'-fired_at'):
 					Cell.set_cell_state(game_id, opponent, 1, y, x, str(yard_id) + "-sunk")
 					Cell.set_cell_state(game_id, player, 2, y, x, "sunk")
+
+class Bot_Moves(models.Model):
+	game = models.ForeignKey(Game, on_delete=models.CASCADE)
+	x = models.IntegerField(default=0)
+	y = models.IntegerField(default=0)
+	outcome = models.CharField(max_length=20, default='miss')
+	
+	def add_Move(game_id,row,col,hit_or_miss):
+		Bot_Moves(game=game_id,x=col,y=row,outcome=hit_or_miss).save()
+	
+	def check_fired_on(game_id,row,col):
+		if (Bot_Moves.objects.filter(game=game_id,x=col,y=row).exists()):
+			return Bot_Moves.objects.get(game=game_id,x=col,y=row).outcome
+		else:
+			return 'not_fired_on'
+	
+	def check_for_outcome(game_id,hit_miss_sunk):
+		return (Bot_Moves.objects.filter(game=game_id,outcome=hit_miss_sunk).exists())
+	
+	def get_moves(game_id,hit_miss_sunk):
+		return Bot_Moves.objects.filter(game=game_id,outcome=hit_miss_sunk)
 		
+	def update_sunk(game_id):
+		b_game = Game.get_game(game_id)
+		for col in range (0, game.num_cols):
+			for row in range (0, game.num_rows):
+				if (Cell.get_cell(game_id, b_game.p1, 2, row, col).state == 'sunk'):
+					Bot_Moves.objects.get(game=game_id,x=col,y=row).update(outcome='sunk')
+	
+	def delete_game(game_id):
+		Bot_Moves.objects.filter(game=game_id).delete()
 
 class Battleships_User(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
