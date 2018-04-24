@@ -16,7 +16,7 @@ class GameBoard extends Component {
 			shipyard: null,
 			vertical: false,
 			player_num: 0,
-			cur_ship: 1,
+			cur_ship: 0,
 			player_ready: false,
         }
  
@@ -90,13 +90,15 @@ class GameBoard extends Component {
  
 	shipConfirm(){
 		this.setState({ cur_ship: this.state.cur_ship+1})
+		this.sendSocketMessage({action: 'confirm', game_id: this.props.game_id})
+		//alert(this.state.cur_ship)
 		if (this.state.game != null){
-			if (this.state.cur_ship==this.state.game.max_ships) {
+			if (this.state.cur_ship==this.state.game.max_ships-1) {
 				this.sendSocketMessage({action: "ready_to_start", game_id: this.state.game.id});
-				this.setState({ player_ready: true});
+				this.setState({ player_ready: true, cur_ship: this.state.cur_ship-1});
 			}
 		}
-		this.sendSocketMessage({action: "update", game_id: this.props.game_id})
+		this.getGame()
 	}
 	
 	updateGame(){
@@ -129,7 +131,7 @@ class GameBoard extends Component {
 			}else if(this.state.player_ready) {
 				return <h3> Awaiting opponent ship placement. </h3>
 			}else{
-				return <h3>Place your {(this.state.shipyard[this.state.cur_ship - 1].name)} ({(this.state.shipyard[this.state.cur_ship - 1].length)})</h3>
+				return <h3>Place your {(this.state.shipyard[this.state.cur_ship].name)} ({(this.state.shipyard[this.state.cur_ship].length)})</h3>
 			}
 		}
 	}
@@ -164,8 +166,8 @@ class GameBoard extends Component {
 			for (var y = 0; y<this.state.game.num_rows; y++) {
 				var rowarr = [];
 				for (var x=0; x<this.state.game.num_cols; x++) {
-					rowarr.push(<GameCell game_id={this.state.game.id} game_started={(this.state.game.p1_ready && this.state.game.p2_ready)} player_ready={this.state.player_ready} x={x} y={y} cell_side={side} cell_state={this.state.cells[side.toString()][x.toString()][y.toString()]} ship_id={this.state.cur_ship} vertical={this.state.vertical} sendSocketMessage={this.sendSocketMessage} isPlayerTurn={this.isPlayerTurn} fix={this.updateGame}/>);
-				}
+					rowarr.push(<GameCell game_id={this.state.game.id} game_started={(this.state.game.p1_ready && this.state.game.p2_ready)} player_ready={this.state.player_ready} x={x} y={y} cell_side={side} cell_state={this.state.cells[side.toString()][x.toString()][y.toString()]} ship_id={this.state.shipyard[this.state.cur_ship].id} vertical={this.state.vertical} sendSocketMessage={this.sendSocketMessage} isPlayerTurn={this.isPlayerTurn} fix={this.tempFix}/>);
+				}				
 				boardarr.push(<tr key={y}>{rowarr}</tr>)
 			}
 			return <table><tbody>{boardarr}</tbody></table>
