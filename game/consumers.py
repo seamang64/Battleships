@@ -115,6 +115,9 @@ class LobbyConsumer(WebsocketConsumer):
 		other_data = {'player': event['player'], 'game': event['game']}
 		self.send(text_data=json.dumps(avail_serializer.data))
 		self.send(text_data=json.dumps(other_data))
+	
+	def update(self, event):
+		self.send(text_data=json.dumps({'instruction': 'update'}))
 		
 
 class GameConsumer(JsonWebsocketConsumer):
@@ -133,7 +136,8 @@ class GameConsumer(JsonWebsocketConsumer):
 		self.accept()
 		
 		async_to_sync(self.channel_layer.group_send)('user-' + str(self.scope['user'].id),{'type': 'update'})
-
+		async_to_sync(self.channel_layer.group_send)('game',{'type': 'update'})
+		
 	def receive(self, text_data, **kwargs):
 		"""
 		Called when a message is received with either text or bytes
