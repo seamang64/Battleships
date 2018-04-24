@@ -26,7 +26,7 @@ class LobbyBase extends React.Component {
         //receives messages from the connected websocket
         let result = JSON.parse(data)
 		if (result['player'] == this.props.current_user.username) {
-			window.location = '/game/' + result['game'] + '/'
+			window.location = '/lobby/'
 		}
     }
 
