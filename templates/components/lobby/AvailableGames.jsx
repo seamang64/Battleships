@@ -17,9 +17,9 @@ class AvailableGames extends React.Component {
 
     renderGameList() {
         // clear out games owned by this player
-        let player_removed = this.props.game_list.filter(function(game) {
-            return game.p1.id !== this.props.player.id
-        }, this);
+        let player_removed = this.state.game_list 
+		player_removed=player_removed.filter(x => x.p1.id != this.props.player.id) //for some reason if this is done on 1 line it throws a fit
+
         
         
         if (player_removed.length > 0) {
