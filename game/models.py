@@ -43,9 +43,10 @@ class Game(models.Model):
 		new_game.save()
 		return new_game
 	
-	def add_p2(game_id,p2_id):		
-		Game.objects.get(pk=game_id).p2=p2_id
-		Game.objects.get(pk=game_id).save()
+	def add_p2(game_id,p2):
+		game = Game.get_game(game_id)
+		game.p2=p2
+		game.save()
 		
 	def delete_game(game_id,creator_id):
 		game = Game.get_game(game_id)
@@ -63,7 +64,7 @@ class Game(models.Model):
 			return 0
 	
 	def set_next_turn(game_id, player_num):
-		game=Game.objects.get(pk=game_id)
+		game=Game.get_game(game_id)
 		game.player_turn=3-player_num
 		game.save()
 	
@@ -181,8 +182,8 @@ class Cell(models.Model):
 			for type in [1, 2]:
 				if type == 1: cell_state = 'sea'
 				else: cell_state = 'unknown'
-				for r in range(0, rows):
-					for c in range(0, cols):
+				for r in range(0, int(rows)):
+					for c in range(0, int(cols)):
 						new_square = Cell(game=Game.get_game(game_id), user_owner=player, board_type=type, x=c, y=r, state=cell_state)
 						new_square.save() 
 
@@ -220,10 +221,11 @@ class Bot_Moves(models.Model):
 		
 	def update_sunk(game_id):
 		b_game = Game.get_game(game_id)
-		for col in range (0, game.num_cols):
-			for row in range (0, game.num_rows):
+		for col in range (0, b_game.num_cols):
+			for row in range (0, b_game.num_rows):
 				if (Cell.get_cell(game_id, b_game.p1, 2, row, col).state == 'sunk'):
-					Bot_Moves.objects.get(game=b_game,x=col,y=row).update(outcome='sunk')
+					Bot_Moves.objects.get(game=b_game,x=col,y=row).outcome='sunk'
+					Bot_Moves.objects.get(game=b_game,x=col,y=row).save()
 	
 	def delete_game(game_id):
 		Bot_Moves.objects.filter(Game.get_game(game_id)).delete()
