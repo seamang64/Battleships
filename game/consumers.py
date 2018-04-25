@@ -1,8 +1,9 @@
 from channels.generic.websocket import WebsocketConsumer, JsonWebsocketConsumer
 from django.contrib.auth.models import User
 import json
+import random
 from asgiref.sync import async_to_sync
-from .models import Game, User, User_Shipyard, Battleships_User, Cell
+from .models import Game, User, User_Shipyard, Battleships_User, Cell, Bot_Moves
 from .serializers import *
 import ast
 from channels.layers import get_channel_layer
@@ -40,7 +41,7 @@ class LobbyConsumer(WebsocketConsumer):
 			max = int(shipyard[0]) + int(shipyard[1]) + int(shipyard[2]) + int(shipyard[3]) + int(shipyard[4])
 			print(max)
 			game = Game.create_new_game(player, content['height'], content['width'], max, content['shipyard'],False)
-			User_Shipyard.delete_all_user_ships(player)
+			#User_Shipyard.delete_all_user_ships(player) not needed anymore
 			async_to_sync(self.channel_layer.group_send)(
 				self.room_group_name,
 				{
@@ -54,9 +55,15 @@ class LobbyConsumer(WebsocketConsumer):
 			player = User.objects.get(username=ast.literal_eval(text_data)['player'])
 			shipyard = content['shipyard']
 			max = int(shipyard[0]) + int(shipyard[1]) + int(shipyard[2]) + int(shipyard[3]) + int(shipyard[4])
-			print(max)
 			game = Game.create_new_game(player, content['height'], content['width'], max, content['shipyard'],True)
-			User_Shipyard.delete_all_user_ships(player)
+			#User_Shipyard.delete_all_user_ships(player)
+			i = 0
+			while User.objects.filter(username='bot{0}'.format(i)).exists():
+				i+=1
+			user = User.objects.create_user('bot{0}'.format(i))
+			game.p2=user
+			game.save()
+			Cell.create_new_board(game.id, game.num_rows, game.num_cols, game.p1, game.p2)
 			async_to_sync(self.channel_layer.group_send)(
 				self.room_group_name,
 				{
@@ -65,17 +72,13 @@ class LobbyConsumer(WebsocketConsumer):
 					'game': game.id
 				}
 			)
-			i = 0
-			while User.objects.filter(username='bot{0}'.format(i)).exists():
-				i+=1
-			user = User.objects.create_user('bot{0}'.format(i))
-			add_p2(game.pk,user.pk)
-
+			
+			
 		if action == 'delete_game':
 			game = Game.get_game(content['game_id'])
 			if game.bot_game:
 				Bot_Moves.delete_game(content['game_id'])
-			Game.delete_game(content['game_id'],self.message.user)
+			Game.delete_game(content['game_id'],self.scope['user'])
 
 		if action == 'find_game':
 			return Game.get_available_games()
@@ -115,6 +118,9 @@ class LobbyConsumer(WebsocketConsumer):
 		other_data = {'player': event['player'], 'game': event['game']}
 		self.send(text_data=json.dumps(avail_serializer.data))
 		self.send(text_data=json.dumps(other_data))
+	
+	def update(self, event):
+		self.send(text_data=json.dumps({'instruction': 'update'}))
 		
 
 class GameConsumer(JsonWebsocketConsumer):
@@ -133,7 +139,8 @@ class GameConsumer(JsonWebsocketConsumer):
 		self.accept()
 		
 		async_to_sync(self.channel_layer.group_send)('user-' + str(self.scope['user'].id),{'type': 'update'})
-
+		async_to_sync(self.channel_layer.group_send)('game',{'type': 'update'})
+		
 	def receive(self, text_data, **kwargs):
 		"""
 		Called when a message is received with either text or bytes
@@ -151,15 +158,18 @@ class GameConsumer(JsonWebsocketConsumer):
 			ship_id = content['ship_id']
 			game = Game.get_game(game_id)
 			ship = Shipyard.get_ship(ship_id)
+			vertical = (content['vertical'] == 'true') #note bool passed as string due to bug in literal_eval
 			if not Game.get_both_ready(game_id):
-				ship_count = User_Shipyard.get_user_shipyard_size(self.scope['user'])
+				ship_count = User_Shipyard.get_user_shipyard_size(self.scope['user'], game_id)
+				print(ship_count)
 				if ship_count < game.max_ships:
-					if not User_Shipyard.contains_user_ship(self.scope['user'],ship_id):
+					#if not User_Shipyard.contains_user_ship(self.scope['user'],ship_id):
+					if True:
 						safe = True
 						if vertical:
-							safe = start_row + ship.length < game.num_rows
+							safe = start_row + ship.length <= game.num_rows
 						else:
-							safe = start_col + ship.length < game.num_cols
+							safe = start_col + ship.length <= game.num_cols
 						if safe:
 							for i in range(0,ship.length):
 								x = i
@@ -167,20 +177,22 @@ class GameConsumer(JsonWebsocketConsumer):
 								if vertical:
 									x = 0
 									y = i
-								if Cell.get_cell(game_id, self.message.user, 1, start_row+y, start_col+x) != 'sea':
+								if Cell.get_cell(game_id, self.scope['user'], 1, start_row+y, start_col+x).state != 'sea':
 									safe = False
+						print(safe)
 						if safe:
 							print("Ready")
-							yard = User_Shipyard.add_user_ship(self.scope['user'].id,ship_id)
+							yard = User_Shipyard.add_user_ship(self.scope['user'].id,ship_id,game_id)
 							print('yard')
 							for i in range(0,ship.length):
 								x = i
 								y = 0
-								if content['vertical'] == 'true': #note bool passed as string due to bug in literal_eval
+								if vertical: 
 									x = 0
 									y = i
 								Cell.set_cell_state(game_id, self.scope['user'], 1, start_row+y, start_col+x, '{0}'.format(yard.id))
-							Game.set_ship_count(game_id,self.message.user,ship_count+1)
+							Game.set_ship_count(game_id,self.scope['user'],ship_count+1)
+							
 
 		if action == 'confirm':
 			game_id = content['game_id']
@@ -219,13 +231,15 @@ class GameConsumer(JsonWebsocketConsumer):
 			self.send(text_data=json.dumps(messagefinal))
 		
 		if action == 'ready_to_start':
-			game = Game.get(content['game_id'])
+			game = Game.get_game(content['game_id'])
 			if game.bot_game:
 				ship_count = 0
+				ship_array = [5]*game.ships_of_size_5 + [4]*game.ships_of_size_4 + [3]*game.ships_of_size_3 + [2]*game.ships_of_size_2 + [1]*game.ships_of_size_1
 				while ship_count < game.max_ships:
 					placed = False
 					attempts = 0
 					while not placed:
+						ship = Shipyard.get_ship_by_length(ship_array[ship_count])
 						if attempts > 200:
 							ship_count = 0
 							placed = False
@@ -233,45 +247,37 @@ class GameConsumer(JsonWebsocketConsumer):
 							for r in range (0,game.num_rows):
 								for c in range (0,game.num_cols):
 									Cell.set_cell_state(content['game_id'],game.p2,1,r,c,'sea')
-						vertical = (random.randint(0,2) == 1)
+						vertical = (random.randint(0,1) == 1)
 						if vertical:
-							size = random.randint(1,game.num_rows+1)
-							while not Shipyard.has_ship_of_length(size):
-								size = random.randint(1,game.num_rows+1)
-							ship = Shipyard.get_ship_by_length(size)
-							start_row = random.randint(0,game.num_rows-ship.length+1)
-							start_col = random.randint(0,game.num_cols)
+							start_row = random.randint(0,game.num_rows-ship.length)
+							start_col = random.randint(0,game.num_cols-1)
 							safe = True
 							for j in range(0,ship.length):
-								if Cell.get_cell(content['game_id'],game.p2,1,start_row+j,start_col) != 'sea':
+								if Cell.get_cell(content['game_id'],game.p2,1,start_row+j,start_col).state != 'sea':
 									safe = False
 							if safe:
-								yard = User_Shipyard.add_user_ship(game.p2,ship_id)
+								yard = User_Shipyard.add_user_ship(game.p2.id,ship.id,game.id)
 								ship_count+=1
 								placed = True
 								for j in range(0,ship.length):
 									Cell.set_cell_state(content['game_id'],game.p2,1,start_row+j,start_col,'{0}'.format(yard.id))
 						else:
-							size = random.randint(1,game.num_cols+1)
-							while not Shipyard.has_ship_of_length(size):
-								size = random.randint(1,game.num_cols+1)
-							ship = Shipyard.get_ship_by_length(size)
-							start_row = random.randint(0,game.num_rows)
-							start_col = random.randint(0,game.num_cols-ship.length+1)
+							start_row = random.randint(0,game.num_rows-1)
+							start_col = random.randint(0,game.num_cols-ship.length)
 							safe = True
 							for j in range(0,ship.length):
-								if Cell.get_cell(content['game_id'],game.p2,1,start_row,start_col+j) != 'sea':
+								if Cell.get_cell(content['game_id'],game.p2,1,start_row,start_col+j).state != 'sea':
 									safe = False
 							if safe:
-								yard = User_Shipyard.add_user_ship(game.p2,ship_id)
+								yard = User_Shipyard.add_user_ship(game.p2.id,ship.id,game.id)
 								ship_count+=1
 								placed = True
 								for j in range(0,ship.length):
 									Cell.set_cell_state(content['game_id'],game.p2,1,start_row,start_col+j,'{0}'.format(yard.id))
 						attempts+=1
-				Game.set_ready(content['game_id'],game.p2)
+				Game.set_ready(content['game_id'],game.p2.id)
 			Game.set_ready(content['game_id'], self.scope['user'].id)
-		
+			
 		if action == 'get_turn':
 			self.send(text_data=json.dumps({'player_turn': '{0}'.format(Game.get_game(content['game_id']).player_turn)}))
 		
@@ -297,6 +303,7 @@ class GameConsumer(JsonWebsocketConsumer):
 					opponent = game.p2
 					opponent_ship_count = game.p2_ship_count
 				if player_num != 0:
+					fired = False #bug fix for models not updating fast enough
 					if game.player_turn == player_num:
 						player_cell = Cell.get_cell(game_id, self.scope['user'], 2, row, col)
 						opponent_cell = Cell.get_cell(game_id, opponent, 1, row, col)
@@ -306,12 +313,12 @@ class GameConsumer(JsonWebsocketConsumer):
 								Cell.set_cell_state(game_id, self.scope['user'], 2, row, col, 'miss')
 								Game.set_last_fired(game_id,col,row,'miss')
 								Cell.set_cell_state(game_id, opponent, 1, row, col, opponent_cell_state+'-fired_at')
-								add_Move(game_id,row,col,'miss')
+								Bot_Moves.add_Move(game_id,row,col,'miss')
 							else:
 								Cell.set_cell_state(game_id, self.scope['user'], 2, row, col, 'hit')
 								Game.set_last_fired(game_id,col,row,'hit')
 								Cell.set_cell_state(game_id, opponent, 1, row, col, opponent_cell_state+'-fired_at')
-								add_Move(game_id,row,col,'hit')
+								Bot_Moves.add_Move(game_id,row,col,'hit')
 								yard_id = int(opponent_cell_state)
 								User_Shipyard.inc_hit_count(yard_id)
 								ship_length = User_Shipyard.objects.get(id=yard_id).ship.length
@@ -324,14 +331,27 @@ class GameConsumer(JsonWebsocketConsumer):
 										#Battleships_User.inc_wins(self.scope['user'])
 										Game.set_winner(game_id,player_num)
 							Game.set_next_turn(game_id, player_num)
+							fired = True
 				if game.bot_game:
-					if game.player_turn == 2:
+					message = {}
+					game = Game.get_game(game_id)
+					for board_num in [1,2]:
+						message[str(board_num-1)] = {}
+						for x in range (0, game.num_cols):
+							message[str(board_num-1)][str(x)] = {}
+							for y in range(0, game.num_rows):
+								cell_state = Cell.get_cell(game_id, self.scope['user'], board_num, y, x).state
+								message[str((board_num-1))][str(x)][str(y)] = cell_state
+					messagefinal = {'cells' : message}
+					self.send(text_data=json.dumps(messagefinal))
+					self.send(text_data=json.dumps({'instruction': 'update'}))
+					if fired:
 						Bot_Moves.update_sunk(game_id)
 						row = 0
 						col = 0
 						if Bot_Moves.check_for_outcome(game_id,'hit'):
 							hits = Bot_Moves.get_moves(game_id,'hit')
-							target = hits[random.randint(0,len(hits))]
+							target = hits[random.randint(0,len(hits)-1)]
 							row = target.y
 							col = target.x
 							x = 0
@@ -344,7 +364,7 @@ class GameConsumer(JsonWebsocketConsumer):
 									x = 0
 									y = 0
 									dir_num+=1
-								cfo = check_fired_on(game_id,row+y,col+x)
+								cfo = Bot_Moves.check_fired_on(game_id,row+y,col+x)
 								if cfo == 'hit':
 									x+=checking_direction[dir_num][0]
 									y+=checking_direction[dir_num][1]
@@ -356,11 +376,11 @@ class GameConsumer(JsonWebsocketConsumer):
 									row+=y
 									col+=x
 						else:
-							row = random.randint(0,game.num_rows)
-							col = random.randint(0,game.num_cols)
-							while check_fired_on(game_id,row,col) != 'not_fired_on':
-								row = random.randint(0,game.num_rows)
-								col = random.randint(0,game.num_cols)
+							row = random.randint(0,game.num_rows-1)
+							col = random.randint(0,game.num_cols-1)
+							while Bot_Moves.check_fired_on(game_id,row,col) != 'not_fired_on':
+								row = random.randint(0,game.num_rows-1)
+								col = random.randint(0,game.num_cols-1)
 							opponent_cell = Cell.get_cell(game_id,game.p1,1,row,col)
 							opponent_cell_state = opponent_cell.state
 							if opponent_cell_state == 'sea':
@@ -378,8 +398,8 @@ class GameConsumer(JsonWebsocketConsumer):
 									Game.set_ship_count(game_id, game.p1, game.p1_ship_count-1)
 									Cell.sink_ship(game_id, yard_id, game.p2, game.p1)
 									if game.p1_ship_count == 1:
-										Game.set_winner(game_id,2)			
-						Game.set_next_turn(game_id, player_num)	
+										Game.set_winner(game_id,2)
+						Game.set_next_turn(game_id, 2)	
 						
 		if action == 'update':
 			game_id = content['game_id']
@@ -395,4 +415,3 @@ class GameConsumer(JsonWebsocketConsumer):
 		Perform things on connection close
 		"""
 		pass
-		

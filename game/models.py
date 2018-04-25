@@ -43,9 +43,10 @@ class Game(models.Model):
 		new_game.save()
 		return new_game
 	
-	def add_p2(game_id,p2_id):		
-		Game.objects.get(pk=game_id).p2=p2_id
-		Game.objects.get(pk=game_id).save()
+	def add_p2(game_id,p2):
+		game = Game.get_game(game_id)
+		game.p2=p2
+		game.save()
 		
 	def delete_game(game_id,creator_id):
 		game = Game.get_game(game_id)
@@ -63,7 +64,7 @@ class Game(models.Model):
 			return 0
 	
 	def set_next_turn(game_id, player_num):
-		game=Game.objects.get(pk=game_id)
+		game=Game.get_game(game_id)
 		game.player_turn=3-player_num
 		game.save()
 	
@@ -125,6 +126,7 @@ class Shipyard(models.Model):
 class User_Shipyard(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
 	ship = models.ForeignKey(Shipyard, on_delete=models.CASCADE)
+	game = models.ForeignKey(Game, on_delete=models.CASCADE) 
 	hit_count = models.IntegerField(default=0)
 	sunk = models.BooleanField(default=False)
 	
@@ -137,8 +139,8 @@ class User_Shipyard(models.Model):
 	def contains_user_ship(user_id,ship_id):
 		return (User_Shipyard.objects.filter(user=user_id,ship=ship_id).exists())
 	
-	def add_user_ship(user_id,ship_id):
-		yard = User_Shipyard(user=User.objects.get(pk=user_id),ship=Shipyard.get_ship(ship_id),hit_count=0)
+	def add_user_ship(user_id,ship_id, game_id):
+		yard = User_Shipyard(user=User.objects.get(pk=user_id),ship=Shipyard.get_ship(ship_id),game=Game.get_game(game_id),hit_count=0)
 		yard.save()
 		return yard
 	
@@ -148,8 +150,8 @@ class User_Shipyard(models.Model):
 	def delete_all_user_ships(user_id):
 		User_Shipyard.objects.filter(user=user_id).delete()
 		
-	def get_user_shipyard_size(user_id):
-		return User_Shipyard.objects.filter(user=user_id).count()
+	def get_user_shipyard_size(user_id, game_id):
+		return User_Shipyard.objects.filter(user=user_id, game=Game.get_game(game_id)).count()
 	
 	def inc_hit_count(yard_id):
 		ship = User_Shipyard.objects.get(id=yard_id)
@@ -180,8 +182,8 @@ class Cell(models.Model):
 			for type in [1, 2]:
 				if type == 1: cell_state = 'sea'
 				else: cell_state = 'unknown'
-				for r in range(0, rows):
-					for c in range(0, cols):
+				for r in range(0, int(rows)):
+					for c in range(0, int(cols)):
 						new_square = Cell(game=Game.get_game(game_id), user_owner=player, board_type=type, x=c, y=r, state=cell_state)
 						new_square.save() 
 
@@ -203,29 +205,30 @@ class Bot_Moves(models.Model):
 	outcome = models.CharField(max_length=20, default='miss')
 	
 	def add_Move(game_id,row,col,hit_or_miss):
-		Bot_Moves(game=game_id,x=col,y=row,outcome=hit_or_miss).save()
+		Bot_Moves(game=Game.get_game(game_id),x=col,y=row,outcome=hit_or_miss).save()
 	
 	def check_fired_on(game_id,row,col):
-		if (Bot_Moves.objects.filter(game=game_id,x=col,y=row).exists()):
-			return Bot_Moves.objects.get(game=game_id,x=col,y=row).outcome
+		if (Bot_Moves.objects.filter(game=Game.get_game(game_id),x=col,y=row).exists()):
+			return Bot_Moves.objects.get(game=Game.get_game(game_id),x=col,y=row).outcome
 		else:
 			return 'not_fired_on'
 	
 	def check_for_outcome(game_id,hit_miss_sunk):
-		return (Bot_Moves.objects.filter(game=game_id,outcome=hit_miss_sunk).exists())
+		return (Bot_Moves.objects.filter(game=Game.get_game(game_id),outcome=hit_miss_sunk).exists())
 	
 	def get_moves(game_id,hit_miss_sunk):
-		return Bot_Moves.objects.filter(game=game_id,outcome=hit_miss_sunk)
+		return Bot_Moves.objects.filter(game=Game.get_game(game_id),outcome=hit_miss_sunk)
 		
 	def update_sunk(game_id):
 		b_game = Game.get_game(game_id)
-		for col in range (0, game.num_cols):
-			for row in range (0, game.num_rows):
+		for col in range (0, b_game.num_cols):
+			for row in range (0, b_game.num_rows):
 				if (Cell.get_cell(game_id, b_game.p1, 2, row, col).state == 'sunk'):
-					Bot_Moves.objects.get(game=game_id,x=col,y=row).update(outcome='sunk')
+					Bot_Moves.objects.get(game=b_game,x=col,y=row).outcome='sunk'
+					Bot_Moves.objects.get(game=b_game,x=col,y=row).save()
 	
 	def delete_game(game_id):
-		Bot_Moves.objects.filter(game=game_id).delete()
+		Bot_Moves.objects.filter(Game.get_game(game_id)).delete()
 
 class Battleships_User(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)

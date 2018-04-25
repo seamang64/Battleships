@@ -49,8 +49,9 @@ class LobbyBase extends React.Component {
         let result = JSON.parse(data)
         // new games, so get an updated list of this player's game
         this.getPlayerGames()
+	this.getAvailableGames()
         // we've received an updated list of available games
-        this.setState({available_game_list: result})
+        //this.setState({available_game_list: result})
     }
 
     sendSocketMessage(message){

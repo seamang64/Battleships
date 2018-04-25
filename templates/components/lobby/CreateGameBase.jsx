@@ -9,6 +9,7 @@ class LobbyBase extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+			bot: false
         }
 
         // bind button click
@@ -26,15 +27,21 @@ class LobbyBase extends React.Component {
         //receives messages from the connected websocket
         let result = JSON.parse(data)
 		if (result['player'] == this.props.current_user.username) {
-			window.location = '/game/' + result['game'] + '/'
+			if (this.state.bot) {
+				window.location = '/game/' + result['game'] + '/'
+			}else{
+				window.location = '/lobby/'
+			}
 		}
     }
 
     sendSocketMessage(message){
         // sends message to channels back-end
 		const socket = this.refs.socket;
+		if (message.action== "create_bot_game") {
+			this.setState({bot: true})
+		}
         socket.state.ws.send(JSON.stringify(message));
-		//alert(JSON.stringify(message));
     }
 	
 	getValue(id) {

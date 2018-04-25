@@ -110,7 +110,7 @@ class GameBoard extends Component {
     // --------------------------- //
  
     instruction(){
-        if (this.state.game != null && this.state.shipyard != null){
+        if (this.state.game != null && this.state.shipyard != null && this.state.game.p2 != null){
             if (this.state.game.winner != 0){
                 // game is over
 				if (this.state.game.winner==1){
@@ -131,8 +131,16 @@ class GameBoard extends Component {
 			}else if(this.state.player_ready) {
 				return <h3> Awaiting opponent ship placement. </h3>
 			}else{
-				return <h3>Place your {(this.state.shipyard[this.state.cur_ship].name)} ({(this.state.shipyard[this.state.cur_ship].length)})</h3>
+				var ship_dup = this.state.shipyard.filter(x => x.id==this.state.shipyard[this.state.cur_ship].id).length
+				var first_ship_dup = this.state.shipyard.findIndex(x => x.id==this.state.shipyard[this.state.cur_ship].id)
+				if (ship_dup == 1) {
+					return <h3>Place your {(this.state.shipyard[this.state.cur_ship].name)} ({(this.state.shipyard[this.state.cur_ship].length)})</h3>
+				} else {
+					return <h3>Place your {(this.state.shipyard[this.state.cur_ship].name)} ({(this.state.shipyard[this.state.cur_ship].length)}) ({(this.state.cur_ship - first_ship_dup + 1)}/{(ship_dup)})</h3>
+				}
 			}
+		} else {
+			return <h3> Waiting for an Opponent </h3>
 		}
 	}
 	
@@ -143,8 +151,10 @@ class GameBoard extends Component {
 			}else{
 				return <h3> Ships Remaining: {(this.state.game.p2_ship_count)} </h3>
 			}
-		} else {
+		} else if(this.state.game != null && this.state.game.p2 != null){
 			return <button onClick={() => { this.shipRotate() }}>Rotate Ship</button>
+		} else {
+			return (<h3></h3>)
 		}
 	}
 	
@@ -155,8 +165,10 @@ class GameBoard extends Component {
 			}else{
 				return <h3> Ships Remaining: {this.state.game.p1_ship_count} </h3>
 			}
-		} else {
+		} else if(this.state.game != null && this.state.game.p2 != null){
 			return <button onClick={() => { this.shipConfirm() }}>Confirm Ship Location</button>
+		} else {
+			return (<h3></h3>)
 		}
 	}
 	

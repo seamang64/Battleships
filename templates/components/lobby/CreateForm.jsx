@@ -11,7 +11,8 @@ class CreateForm extends React.Component{
 			size2: 1,
 			size3: 1,
 			size4: 1,
-			size5: 1
+			size5: 1,
+			bot: false
         }
 
       // bind button click
@@ -20,10 +21,12 @@ class CreateForm extends React.Component{
 
     onCreateGameClick(event) {
 		var ships = [this.state.size1, this.state.size2, this.state.size3, this.state.size4, this.state.size5];
-		
-		var message = {action: "create_game", player: this.props.player.username, height: this.state.height, width: this.state.width, shipyard: ships};
-		
-        this.props.sendSocketMessage({action: "create_game", player: this.props.player.username, height: this.state.height, width: this.state.width, shipyard: ships});
+		if (this.state.bot){
+			var message = {action: "create_bot_game", player: this.props.player.username, height: this.state.height, width: this.state.width, shipyard: ships};
+		}else{
+			var message = {action: "create_game", player: this.props.player.username, height: this.state.height, width: this.state.width, shipyard: ships};
+		}
+        this.props.sendSocketMessage(message);
     }
 
 	render() {
@@ -42,6 +45,8 @@ class CreateForm extends React.Component{
 				Ships of size 4: <input type="number" value={this.state.size4} onChange={evt => this.updateSize4(evt)}></input>
 				<br></br>
 				Ships of size 5: <input type="number" value={this.state.size5} onChange={evt => this.updateSize5(evt)}></input>
+				<br></br>
+				Bot Game: <input type="checkbox" value={this.state.bot} onChange={evt => this.setState({bot:!this.state.bot})}></input>
 				<br></br>
 				<a href="#" className="pull-right badge" onClick={this.onCreateGameClick} id="create_game">Start New Game</a>
 			</div>
