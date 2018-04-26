@@ -95,7 +95,7 @@ class GameBoard extends Component {
 		if (this.state.game != null){
 			if (this.state.cur_ship==this.state.game.max_ships-1) {
 				this.sendSocketMessage({action: "ready_to_start", game_id: this.state.game.id});
-				this.setState({ player_ready: true, cur_ship: this.state.cur_ship-1});
+				this.setState({ player_ready: true, cur_ship: 0});
 			}
 		}
 		this.getGame()
@@ -178,7 +178,7 @@ class GameBoard extends Component {
 			for (var y = 0; y<this.state.game.num_rows; y++) {
 				var rowarr = [];
 				for (var x=0; x<this.state.game.num_cols; x++) {
-					rowarr.push(<GameCell game_id={this.state.game.id} game_started={(this.state.game.p1_ready && this.state.game.p2_ready)} player_ready={this.state.player_ready} x={x} y={y} cell_side={side} cell_state={this.state.cells[side.toString()][x.toString()][y.toString()]} ship_id={this.state.shipyard[this.state.cur_ship].id} vertical={this.state.vertical} sendSocketMessage={this.sendSocketMessage} isPlayerTurn={this.isPlayerTurn} fix={this.tempFix}/>);
+					rowarr.push(<GameCell game_id={this.state.game.id} game_started={(this.state.game.p1_ready && this.state.game.p2_ready)} player_ready={this.state.player_ready} x={x} y={y} cell_side={side} cell_state={this.state.cells[side.toString()][x.toString()][y.toString()]} ship_id={this.state.shipyard[this.state.cur_ship].id} vertical={this.state.vertical} sendSocketMessage={this.sendSocketMessage} isPlayerTurn={this.isPlayerTurn}/>);
 				}				
 				boardarr.push(<tr key={y}>{rowarr}</tr>)
 			}
