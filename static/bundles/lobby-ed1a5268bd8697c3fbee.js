@@ -59,7 +59,7 @@
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "45165ffb96e3d0c1e462"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "ed1a5268bd8697c3fbee"; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentParents = []; // eslint-disable-line no-unused-vars
@@ -30555,8 +30555,9 @@ var LobbyBase = function (_React$Component) {
             var result = JSON.parse(data);
             // new games, so get an updated list of this player's game
             this.getPlayerGames();
+            this.getAvailableGames();
             // we've received an updated list of available games
-            this.setState({ available_game_list: result });
+            //this.setState({available_game_list: result})
         }
     }, {
         key: 'sendSocketMessage',
@@ -30650,10 +30651,14 @@ var AvailableGames = function (_React$Component) {
     }, {
         key: "renderGameList",
         value: function renderGameList() {
+            var _this2 = this;
+
             // clear out games owned by this player
-            var player_removed = this.props.game_list.filter(function (game) {
-                return game.p1.id !== this.props.player.id;
-            }, this);
+            var player_removed = this.state.game_list;
+            player_removed = player_removed.filter(function (x) {
+                return x.p1.id != _this2.props.player.id;
+            }); //for some reason if this is done on 1 line it throws a fit
+
 
             if (player_removed.length > 0) {
                 return player_removed.map(function (game) {

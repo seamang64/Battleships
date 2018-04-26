@@ -59,7 +59,7 @@
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "45165ffb96e3d0c1e462"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "ed1a5268bd8697c3fbee"; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentParents = []; // eslint-disable-line no-unused-vars
@@ -30505,10 +30505,11 @@ var LobbyBase = function (_React$Component) {
 
         var _this = _possibleConstructorReturn(this, (LobbyBase.__proto__ || Object.getPrototypeOf(LobbyBase)).call(this, props));
 
-        _this.state = {};
+        _this.state = {
+            bot: false
 
-        // bind button click
-        _this.sendSocketMessage = _this.sendSocketMessage.bind(_this);
+            // bind button click
+        };_this.sendSocketMessage = _this.sendSocketMessage.bind(_this);
         return _this;
     }
 
@@ -30526,7 +30527,11 @@ var LobbyBase = function (_React$Component) {
             //receives messages from the connected websocket
             var result = JSON.parse(data);
             if (result['player'] == this.props.current_user.username) {
-                window.location = '/game/' + result['game'] + '/';
+                if (this.state.bot) {
+                    window.location = '/game/' + result['game'] + '/';
+                } else {
+                    window.location = '/lobby/';
+                }
             }
         }
     }, {
@@ -30534,8 +30539,10 @@ var LobbyBase = function (_React$Component) {
         value: function sendSocketMessage(message) {
             // sends message to channels back-end
             var socket = this.refs.socket;
+            if (message.action == "create_bot_game") {
+                this.setState({ bot: true });
+            }
             socket.state.ws.send(JSON.stringify(message));
-            //alert(JSON.stringify(message));
         }
     }, {
         key: 'getValue',
@@ -30613,7 +30620,8 @@ var CreateForm = function (_React$Component) {
 			size2: 1,
 			size3: 1,
 			size4: 1,
-			size5: 1
+			size5: 1,
+			bot: false
 
 			// bind button click
 		};_this.onCreateGameClick = _this.onCreateGameClick.bind(_this);
@@ -30624,10 +30632,12 @@ var CreateForm = function (_React$Component) {
 		key: "onCreateGameClick",
 		value: function onCreateGameClick(event) {
 			var ships = [this.state.size1, this.state.size2, this.state.size3, this.state.size4, this.state.size5];
-
-			var message = { action: "create_game", player: this.props.player.username, height: this.state.height, width: this.state.width, shipyard: ships };
-
-			this.props.sendSocketMessage({ action: "create_game", player: this.props.player.username, height: this.state.height, width: this.state.width, shipyard: ships });
+			if (this.state.bot) {
+				var message = { action: "create_bot_game", player: this.props.player.username, height: this.state.height, width: this.state.width, shipyard: ships };
+			} else {
+				var message = { action: "create_game", player: this.props.player.username, height: this.state.height, width: this.state.width, shipyard: ships };
+			}
+			this.props.sendSocketMessage(message);
 		}
 	}, {
 		key: "render",
@@ -30670,6 +30680,11 @@ var CreateForm = function (_React$Component) {
 				"Ships of size 5: ",
 				_react2.default.createElement("input", { type: "number", value: this.state.size5, onChange: function onChange(evt) {
 						return _this2.updateSize5(evt);
+					} }),
+				_react2.default.createElement("br", null),
+				"Bot Game: ",
+				_react2.default.createElement("input", { type: "checkbox", value: this.state.bot, onChange: function onChange(evt) {
+						return _this2.setState({ bot: !_this2.state.bot });
 					} }),
 				_react2.default.createElement("br", null),
 				_react2.default.createElement(

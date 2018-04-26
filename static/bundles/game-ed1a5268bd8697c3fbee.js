@@ -59,7 +59,7 @@
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "45165ffb96e3d0c1e462"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "ed1a5268bd8697c3fbee"; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentParents = []; // eslint-disable-line no-unused-vars
@@ -30601,7 +30601,7 @@ var GameBoard = function (_Component) {
 			if (this.state.game != null) {
 				if (this.state.cur_ship == this.state.game.max_ships - 1) {
 					this.sendSocketMessage({ action: "ready_to_start", game_id: this.state.game.id });
-					this.setState({ player_ready: true, cur_ship: this.state.cur_ship - 1 });
+					this.setState({ player_ready: true, cur_ship: 0 });
 				}
 			}
 			this.getGame();
@@ -30619,7 +30619,9 @@ var GameBoard = function (_Component) {
 	}, {
 		key: 'instruction',
 		value: function instruction() {
-			if (this.state.game != null && this.state.shipyard != null) {
+			var _this2 = this;
+
+			if (this.state.game != null && this.state.shipyard != null && this.state.game.p2 != null) {
 				if (this.state.game.winner != 0) {
 					// game is over
 					if (this.state.game.winner == 1) {
@@ -30676,22 +30678,50 @@ var GameBoard = function (_Component) {
 						' Awaiting opponent ship placement. '
 					);
 				} else {
-					return _react2.default.createElement(
-						'h3',
-						null,
-						'Place your ',
-						this.state.shipyard[this.state.cur_ship].name,
-						' (',
-						this.state.shipyard[this.state.cur_ship].length,
-						')'
-					);
+					var ship_dup = this.state.shipyard.filter(function (x) {
+						return x.id == _this2.state.shipyard[_this2.state.cur_ship].id;
+					}).length;
+					var first_ship_dup = this.state.shipyard.findIndex(function (x) {
+						return x.id == _this2.state.shipyard[_this2.state.cur_ship].id;
+					});
+					if (ship_dup == 1) {
+						return _react2.default.createElement(
+							'h3',
+							null,
+							'Place your ',
+							this.state.shipyard[this.state.cur_ship].name,
+							' (',
+							this.state.shipyard[this.state.cur_ship].length,
+							')'
+						);
+					} else {
+						return _react2.default.createElement(
+							'h3',
+							null,
+							'Place your ',
+							this.state.shipyard[this.state.cur_ship].name,
+							' (',
+							this.state.shipyard[this.state.cur_ship].length,
+							') (',
+							this.state.cur_ship - first_ship_dup + 1,
+							'/',
+							ship_dup,
+							')'
+						);
+					}
 				}
+			} else {
+				return _react2.default.createElement(
+					'h3',
+					null,
+					' Waiting for an Opponent '
+				);
 			}
 		}
 	}, {
 		key: 'eleL',
 		value: function eleL() {
-			var _this2 = this;
+			var _this3 = this;
 
 			//left element below board
 			if (this.state.player_ready) {
@@ -30712,20 +30742,22 @@ var GameBoard = function (_Component) {
 						' '
 					);
 				}
-			} else {
+			} else if (this.state.game != null && this.state.game.p2 != null) {
 				return _react2.default.createElement(
 					'button',
 					{ onClick: function onClick() {
-							_this2.shipRotate();
+							_this3.shipRotate();
 						} },
 					'Rotate Ship'
 				);
+			} else {
+				return _react2.default.createElement('h3', null);
 			}
 		}
 	}, {
 		key: 'eleR',
 		value: function eleR() {
-			var _this3 = this;
+			var _this4 = this;
 
 			//right element below board
 			if (this.state.player_ready) {
@@ -30746,14 +30778,16 @@ var GameBoard = function (_Component) {
 						' '
 					);
 				}
-			} else {
+			} else if (this.state.game != null && this.state.game.p2 != null) {
 				return _react2.default.createElement(
 					'button',
 					{ onClick: function onClick() {
-							_this3.shipConfirm();
+							_this4.shipConfirm();
 						} },
 					'Confirm Ship Location'
 				);
+			} else {
+				return _react2.default.createElement('h3', null);
 			}
 		}
 	}, {
@@ -30765,7 +30799,7 @@ var GameBoard = function (_Component) {
 				for (var y = 0; y < this.state.game.num_rows; y++) {
 					var rowarr = [];
 					for (var x = 0; x < this.state.game.num_cols; x++) {
-						rowarr.push(_react2.default.createElement(_GameCell2.default, { game_id: this.state.game.id, game_started: this.state.game.p1_ready && this.state.game.p2_ready, player_ready: this.state.player_ready, x: x, y: y, cell_side: side, cell_state: this.state.cells[side.toString()][x.toString()][y.toString()], ship_id: this.state.shipyard[this.state.cur_ship].id, vertical: this.state.vertical, sendSocketMessage: this.sendSocketMessage, isPlayerTurn: this.isPlayerTurn, fix: this.tempFix }));
+						rowarr.push(_react2.default.createElement(_GameCell2.default, { game_id: this.state.game.id, game_started: this.state.game.p1_ready && this.state.game.p2_ready, player_ready: this.state.player_ready, x: x, y: y, cell_side: side, cell_state: this.state.cells[side.toString()][x.toString()][y.toString()], ship_id: this.state.shipyard[this.state.cur_ship].id, vertical: this.state.vertical, sendSocketMessage: this.sendSocketMessage, isPlayerTurn: this.isPlayerTurn }));
 					}
 					boardarr.push(_react2.default.createElement(
 						'tr',
