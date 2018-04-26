@@ -6,11 +6,26 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user
 from django.contrib import messages
-from game.models import Game, Cell
+from game.models import Game, Cell, Battleships_User
 
 class HomeView(TemplateView):
     template_name = 'home.html'
- 
+
+    def get_context_data(self, **kwargs):
+        context = super(HomeView, self).get_context_data(**kwargs)
+        message = []
+        for i in range(0, len(Battleships_User.objects.all())):
+            message.append(Battleships_User.objects.all()[i])
+        message.sort(key=lambda x: -x.wins)
+        context['top_five'] = message[:5]
+        current_user = self.request.user
+        current_battle_user = Battleships_User.get_user(current_user.id)
+        context['current'] = current_battle_user
+        if current_battle_user.games_played != 0:
+            context['current_wl'] = current_battle_user.wins / current_battle_user.games_played
+        else:
+            context['current_wl'] = "N/A"
+        return context 
  
 class CreateUserView(CreateView):
     template_name = 'register.html'
@@ -22,6 +37,7 @@ class CreateUserView(CreateView):
         username, password = form.cleaned_data.get('username'), form.cleaned_data.get('password1')
         new_user = authenticate(username=username, password=password)
         login(self.request, new_user)
+	battle_user = Battleships_User.add_user(new_user)
         return valid
 
 		

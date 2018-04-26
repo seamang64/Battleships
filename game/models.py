@@ -252,17 +252,21 @@ class Battleships_User(models.Model):
 	wins = models.IntegerField(default=0)
 	games_played = models.IntegerField(default=0)
 	
-	def add_user(user_id):
-		Battleships_User(user=user_id, wins=0, games_played=0).save()
+	def add_user(user):
+		Battleships_User(user=user, wins=0, games_played=0).save()
 	
-	def delete_user(user_id):
-		Battleships_User.objects.get(user=user_id).delete()
+	def delete_user(user):
+		Battleships_User.objects.get(user=user).delete()
 	
-	def get_user(user_id):
-		return Battleships_User.objects.get(user=user_id)
+	def get_user(user):
+		return Battleships_User.objects.get(user=user)
 	
-	def inc_wins(user_id):
-		Battleships_User.objects.get(user=user_id).update(wins=F('wins')+1)
+	def inc_wins(user):
+		b_user=Battleships_User.objects.get(user=user)
+		b_user.wins += 1
+		b_user.save()
 	
-	def inc_games_played(user_id):
-		Battleships_User.objects.get(user=user_id).update(games_played=F('games_played')+1)
+	def inc_games_played(user):
+		b_user=Battleships_User.objects.get(user=user)
+		b_user.games_played += 1
+		b_user.save()
