@@ -1,10 +1,44 @@
 {% extends "base.html" %} 
 
 {% block main_content %}
+
 <div class="row">
     <div class="col-lg-12">
         <h3>Welcome to Battleships!</h3>
-        <hr>
+		<hr>
+		<p>Have you ever wondered what it would be like to be in the navy? Ever longed to feel the pure thrill and excitement of a battle? Ever dreamed of leading your own fleet of ships into battle against a tremendous foe? Well, chances are, if you're reading this, that'll never happen, so best give up on those dreams. BUT, you can come close to fulfilling them with our all new Battleships game! In it, you'll be able to... </p>
+		<ul>
+			<li>Battle other players online to prove your naval prowess!</li>
+			<li>Hone your skills against an AI!</li>
+			<li>Compete with your friends to see who is the most accomplished general!</li>
+		</ul>
+		<hr>
+		
+		<h4>High Score Table</h4>
+		<hr>
+		<table style="width:100%">
+          <tr>
+            <th>Player Name</th>
+            <th>Score</th>
+          </tr>
+		  	<ul>
+			{% for entry in top_five %}
+				<tr>
+					<td>{{ entry.user.username }}</td>
+					<td>{{ entry.wins }}</td>
+				</tr>
+			{% endfor %}
+			</ul>
+        </table>
+		
+		<hr>
+		<h4>Personal Statistics</h4>
+		<hr>
+		<ul>
+			<li>Games Won: {{current.wins}}</li>
+			<li>Games Played: {{current.games_played}}</li>
+			<li>Win/Loss Ratio: {{current_wl}}</li>
+		</ul>
     </div>
 </div>
 {% endblock %}
