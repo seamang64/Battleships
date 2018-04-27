@@ -339,8 +339,9 @@ class GameConsumer(JsonWebsocketConsumer):
 									Cell.sink_ship(game_id, yard_id, self.scope['user'], opponent)
 									#checks to see if the user has won
 									if opponent_ship_count == 1:
+										if not game.bot_game:
+											Battleships_User.inc_games_played(opponent)
 										Battleships_User.inc_games_played(self.scope['user'])
-										Battleships_User.inc_games_played(opponent_id)
 										Battleships_User.inc_wins(self.scope['user'])
 										Game.set_winner(game_id,player_num)
 							Game.set_next_turn(game_id, player_num)
@@ -446,6 +447,7 @@ class GameConsumer(JsonWebsocketConsumer):
 								#checks to see if it has won
 								if game.p1_ship_count == 1:
 									Game.set_winner(game_id,2)
+									Battleships_User.inc_games_played(self.scope['user'])
 						Game.set_next_turn(game_id, 2)	
 						
 		if action == 'update':
