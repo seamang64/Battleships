@@ -30,7 +30,7 @@
 			{% endfor %}
 			</ul>
         </table>
-		
+		{% if logged_in %}
 		<hr>
 		<h4>Personal Statistics</h4>
 		<hr>
@@ -39,6 +39,7 @@
 			<li>Games Played: {{current.games_played}}</li>
 			<li>Win/Loss Ratio: {{current_wl}}</li>
 		</ul>
+		{% endif %}
     </div>
 </div>
 {% endblock %}
