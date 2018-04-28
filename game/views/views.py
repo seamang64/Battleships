@@ -19,13 +19,17 @@ class HomeView(TemplateView):
         message.sort(key=lambda x: -x.wins)
         context['top_five'] = message[:5]
         current_user = self.request.user
-        current_battle_user = Battleships_User.get_user(current_user.id)
-        context['current'] = current_battle_user
-        if current_battle_user.games_played != 0:
-            context['current_wl'] = current_battle_user.wins / current_battle_user.games_played
-        else:
-            context['current_wl'] = "N/A"
-        return context 
+        context['logged_in'] = True
+        try:
+            current_battle_user = Battleships_User.get_user(current_user.id)
+            context['current'] = current_battle_user
+            if current_battle_user.games_played != 0:
+                context['current_wl'] = round(current_battle_user.wins / current_battle_user.games_played, 2)
+            else:
+                context['current_wl'] = "N/A"
+        except:
+            context['logged_in'] = False
+        return context
  
 class CreateUserView(CreateView):
     template_name = 'register.html'
