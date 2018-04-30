@@ -7,7 +7,7 @@ import Websocket from 'react-websocket'
 
 
 class GameBoard extends Component {
-    // lifecycle methods
+    // initialise state variables for the component
     constructor(props) {
         super(props)
         this.state = {
@@ -20,7 +20,7 @@ class GameBoard extends Component {
 			player_ready: false,
         }
  
-        // bind button click
+        // bind functions
         this.sendSocketMessage = this.sendSocketMessage.bind(this);
         this.isPlayerTurn = this.isPlayerTurn.bind(this);
 		this.shipRotate = this.shipRotate.bind(this);
@@ -31,16 +31,16 @@ class GameBoard extends Component {
     }
  
     componentDidMount() {
+		//get initial game information from the backend
         this.getGame()
-		//this.updateGame()
     }
  
     componentWillUnmount() {
         this.serverRequest.abort();
     }
  
-    // custom methods
-	getGame(){
+	//basic game information stored in a url along with an array containing the templates for ships to be placed
+	getGame(){ 
          const game_url = 'http://127.0.0.1:8080/game-from-id/' + this.props.game_id
          this.serverRequest = $.get(game_url, function (result) {
             this.setState({ game: result.game})
@@ -50,8 +50,8 @@ class GameBoard extends Component {
    
     handleData(data) {
         //receives messages from the connected websocket
+		//updates respective states accordingly
         let result = JSON.parse(data)
-		//alert(JSON.stringify(result))
 		if (result.game != null) {
 			this.setState( {game : result.game})
 		}
@@ -63,7 +63,13 @@ class GameBoard extends Component {
 		}
 		if (result.player_num != null) {
 			this.setState( {player_num : result.player_num})
+			if (result.player_num == 1) {
+				this.setState( {player_ready : this.state.game.p1_ready} )
+			} else if (result.player_num == 2) {
+				this.setState( {player_ready : this.state.game.p2_ready} )
+			}
 		}
+		// if instructed to update will request updated information
 		if (result.instruction == 'update') {
 			this.updateGame()
 		}
@@ -73,9 +79,9 @@ class GameBoard extends Component {
         // sends message to channels back-end
        const socket = this.refs.socket;
        socket.state.ws.send(JSON.stringify(message))
-	   //alert(JSON.stringify(message))
     }
-
+	
+	// check if it's the users turn
     isPlayerTurn(){
         if (this.state.player_num == this.state.game.player_turn){
             return true
@@ -84,14 +90,16 @@ class GameBoard extends Component {
         }
     }
 	
+	// flips the vertical state corresponding to ship orientation during placing
 	shipRotate(){
 		this.setState({ vertical : !this.state.vertical})
 	}
  
+	// confirm a ship position and move to next ship
+	// if final ship set player to be ready and wait for game start
 	shipConfirm(){
 		this.setState({ cur_ship: this.state.cur_ship+1})
 		this.sendSocketMessage({action: 'confirm', game_id: this.props.game_id})
-		//alert(this.state.cur_ship)
 		if (this.state.game != null){
 			if (this.state.cur_ship==this.state.game.max_ships-1) {
 				this.sendSocketMessage({action: "ready_to_start", game_id: this.state.game.id});
@@ -101,6 +109,7 @@ class GameBoard extends Component {
 		this.getGame()
 	}
 	
+	//requests game + cell + player information from backend
 	updateGame(){
 		this.sendSocketMessage({action: "get_cells", game_id: this.props.game_id});
 		this.sendSocketMessage({action: "get_player_num", game_id: this.props.game_id});
@@ -109,16 +118,21 @@ class GameBoard extends Component {
     // ----  RENDER FUNCTIONS ---- //
     // --------------------------- //
  
+	//renders instructions for the player
     instruction(){
+		// check the game and shipyard exist and have an opponent
         if (this.state.game != null && this.state.shipyard != null && this.state.game.p2 != null){
-            if (this.state.game.winner != 0){
-                // game is over
+            // check if game finished
+			if (this.state.game.winner != 0){
+				// display name of winner
 				if (this.state.game.winner==1){
 					return <h3><span className="text-primary">{(this.state.game.p1.username)}</span> is Victorious! </h3>
 				}else {
 					return <h3><span className="text-primary">{(this.state.game.p2.username)}</span> is Victorious! </h3>
 				}
+			// if game not over and has started
 			}else if((this.state.game.p1_ready && this.state.game.p2_ready)){
+				//display who's turn it is
 				if(this.state.game.player_turn == 1){
 					return <h3>Current Turn:&nbsp;
 						<span className="text-primary">{(this.state.game.p1.username)}</span>
@@ -128,9 +142,12 @@ class GameBoard extends Component {
 						<span className="text-primary">{(this.state.game.p2.username)}</span>
 					 </h3>
 				}
+			// if player is ready but opponent isn't
 			}else if(this.state.player_ready) {
 				return <h3> Awaiting opponent ship placement. </h3>
+			// if none of the above then player in ship placing phase
 			}else{
+				//get information on current ship being placed (length, name, number of duplicates) and display relevant instruction
 				var ship_dup = this.state.shipyard.filter(x => x.id==this.state.shipyard[this.state.cur_ship].id).length
 				var first_ship_dup = this.state.shipyard.findIndex(x => x.id==this.state.shipyard[this.state.cur_ship].id)
 				if (ship_dup == 1) {
@@ -144,13 +161,16 @@ class GameBoard extends Component {
 		}
 	}
 	
-	eleL() { //left element below board
+	//renders left element below board
+	eleL() {
+		// player has finished placing ships display number of their ships remaining
 		if (this.state.player_ready) {
 			if (this.state.player_num == 1){
 				return <h3> Ships Remaining: {(this.state.game.p1_ship_count)} </h3>
 			}else{
 				return <h3> Ships Remaining: {(this.state.game.p2_ship_count)} </h3>
 			}
+		// if player placing ships display a button to allow the player to rotate ship orientation
 		} else if(this.state.game != null && this.state.game.p2 != null){
 			return <button onClick={() => { this.shipRotate() }}>Rotate Ship</button>
 		} else {
@@ -158,26 +178,34 @@ class GameBoard extends Component {
 		}
 	}
 	
-	eleR() { //right element below board
-		if (this.state.player_ready) {
-			if (this.state.player_num == 1){
-				return <h3> Ships Remaining: {this.state.game.p2_ship_count} </h3>
-			}else{
-				return <h3> Ships Remaining: {this.state.game.p1_ship_count} </h3>
-			}
-		} else if(this.state.game != null && this.state.game.p2 != null){
-			return <button onClick={() => { this.shipConfirm() }}>Confirm Ship Location</button>
+	//render right element below board
+	eleR() { 
+		if (this.state.game != null && this.state.game.p2 != null) {
+			if (this.state.player_ready) {
+				// player has finished placing ships display number of opponents ships remaining
+				if (this.state.player_num == 1){
+					return <h3> Ships Remaining: {this.state.game.p2_ship_count} </h3>
+				}else{
+					return <h3> Ships Remaining: {this.state.game.p1_ship_count} </h3>
+				}
+			// if player placing ships display a button to allow the player to confirm ship location
+			} else {
+				return <button onClick={() => { this.shipConfirm() }}>Confirm Ship Location</button>
+			} 
 		} else {
 			return (<h3></h3>)
 		}
 	}
 	
+	// render a game board. Side corresponds to whether the board is ally (0) or enemy (1)
 	renderBoard(side){
 		var boardarr = [];
 		if (this.state.game != null && this.state.cells != null){ //check game and cells exist
+			// construct a table with each element containing a GameCell instance
 			for (var y = 0; y<this.state.game.num_rows; y++) {
 				var rowarr = [];
 				for (var x=0; x<this.state.game.num_cols; x++) {
+					//Passes game information, specific cell state and ship information to GameCell instance
 					rowarr.push(<GameCell game_id={this.state.game.id} game_started={(this.state.game.p1_ready && this.state.game.p2_ready)} player_ready={this.state.player_ready} x={x} y={y} cell_side={side} cell_state={this.state.cells[side.toString()][x.toString()][y.toString()]} ship_id={this.state.shipyard[this.state.cur_ship].id} vertical={this.state.vertical} sendSocketMessage={this.sendSocketMessage} isPlayerTurn={this.isPlayerTurn}/>);
 				}				
 				boardarr.push(<tr key={y}>{rowarr}</tr>)
@@ -189,6 +217,7 @@ class GameBoard extends Component {
 		}	
 	}
 	
+	// Main render function controlling where different elements appear
 	render(){
         return (
             <div className="row">
@@ -226,11 +255,5 @@ class GameBoard extends Component {
     }
 }
 
-//GameBoard.propTypes = {
-    //game_id: PropTypes.number,
-    //socket: PropTypes.string,
-    //current_user: PropTypes.object
-    
-//}
  
 export default GameBoard

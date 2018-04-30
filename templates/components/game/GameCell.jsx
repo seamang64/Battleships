@@ -7,6 +7,7 @@ const ship_hit_img = <img src="/static/img/ship_hit.png" />
 const ship_sunk_img = <img src="/static/img/ship_sunk.png" />
  
 class GameCell extends Component {
+	// state variables to hold information passed as props from GameBoard instance on creation
     constructor(props) {
         super(props)
         this.state = {
@@ -24,6 +25,7 @@ class GameCell extends Component {
     }
 
     componentWillReceiveProps(newProps){
+	// state variables which will be updated by GameBoard after initialisation
         this.setState({
 			vertical: newProps.vertical,
 			cell_state: newProps.cell_state,
@@ -33,12 +35,14 @@ class GameCell extends Component {
             })
     }
  
-    getStatus(){ //add ship sunk
+	// checks state of cell and assign required image
+	// note enemy cell states passed as unknown hit or sunk so no information leaked to player
+    getStatus(){
 		if (this.state.cell_side == 0){ //ally board  
 			if (this.state.cell_state == 'sea') {
 				return sea_img
 			}else if(this.state.cell_state == 'sea-fired_at') {
-				return unknown_img //change this undecided how to represent
+				return unknown_img
 			}else if(this.state.cell_state.includes('fired_at')) {
 				return ship_hit_img
 			}else if(this.state.cell_state.includes('sunk')) {
@@ -47,7 +51,6 @@ class GameCell extends Component {
 				return ship_img
 			}
 		}else{ //enemy board
-			if (this.state.game_startedd) {alert(this.state.cell_state)}
 			if (this.state.cell_state == 'unknown') {
 				return unknown_img
 			}else if(this.state.cell_state == 'hit') {
@@ -60,13 +63,17 @@ class GameCell extends Component {
 		}
     }
  
-    cellClicked(square){ //GAME LOGIC HERE
-		if (this.state.game_started) { //if game started and cell belongs to enemy board then fire at this cell
+	// Function to control what happens when a cell is clicked
+    cellClicked(square){
+		//if game started, cell belongs to enemy board and is the player's turn then fire at this cell
+		if (this.state.game_started) {
 			if (this.state.cell_side == 1) {
 				if (this.props.isPlayerTurn()){
 					this.props.sendSocketMessage({action: "fire", game_id: this.state.game_id, row: this.state.cell_y, col: this.state.cell_x});
 				}
 			}
+		// else the player is in the place ship phase
+		// so move the ship being placed to a new position
 		}else{
 			if (!this.state.player_ready) {
 				if (this.state.cell_side == 0) { //if player not ready then placeship at this cell (if its ally)
@@ -75,10 +82,11 @@ class GameCell extends Component {
 				}
 			}
 		}
+		// instructs the backend to tell both players to update state variables
 		this.props.sendSocketMessage({action: "update", game_id: this.state.game_id})
     }
 
-   
+	// render function for the cell
     render() {
         return (
             <td key={this.state.cell_x.toString()+'_'+this.state.cell_y.toString} onClick={this.cellClicked} height="60" width="60">
@@ -87,16 +95,5 @@ class GameCell extends Component {
         )
     }
 }
- 
-//GameCell.propTypes = {
-    //loc_x: PropTypes.number,
-    //loc_y: PropTypes.number,
-    //square_id: PropTypes.number,
-    //owner: PropTypes.number,
-    //possession_type: PropTypes.string,
-    //game_creator: PropTypes.number,
-    //sendSocketMessage: PropTypes.func,
-    //isPlayerTurn: PropTypes.func
-//}
  
 export default GameCell
