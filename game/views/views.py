@@ -41,7 +41,7 @@ class CreateUserView(CreateView):
         username, password = form.cleaned_data.get('username'), form.cleaned_data.get('password1')
         new_user = authenticate(username=username, password=password)
         login(self.request, new_user)
-	battle_user = Battleships_User.add_user(new_user)
+        battle_user = Battleships_User.add_user(new_user)
         return valid
 
 		
