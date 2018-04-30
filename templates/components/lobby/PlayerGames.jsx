@@ -38,14 +38,16 @@ class PlayerGames extends React.Component{
     }
 
     renderGameList(){
-        if (this.props.game_list.length > 0){
-            return this.props.game_list.map(function(game){
-                    return <li key={game.id} className="list-group-item">
-                                <span className="badge pull-left">{game.id}</span>&nbsp;&nbsp;
-                                <span>{game.p1.username}</span> vs <span>{this.renderOpponent(game)}</span>
+		var game_list_filtered = this.props.game_list.filter((game => game.winner == 0))
+		
+        if (game_list_filtered.length > 0){
+            return game_list_filtered.map(function(game){
+						return <li key={game.id} className="list-group-item">
+									<span className="badge pull-left">{game.id}</span>&nbsp;&nbsp;
+									<span>{game.p1.username}</span> vs <span>{this.renderOpponent(game)}</span>
 
-                                <a className="btn btn-sm btn-primary pull-right" href={"/game/"+game.id+"/"}>{this.renderButton(game)}</a>
-                            </li>
+									<a className="btn btn-sm btn-primary pull-right" href={"/game/"+game.id+"/"}>{this.renderButton(game)}</a>
+								</li>
                     }, this)
 
         }else{
