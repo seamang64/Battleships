@@ -98,15 +98,17 @@ class GameBoard extends Component {
 	// confirm a ship position and move to next ship
 	// if final ship set player to be ready and wait for game start
 	shipConfirm(){
-		this.setState({ cur_ship: this.state.cur_ship+1})
-		this.sendSocketMessage({action: 'confirm', game_id: this.props.game_id})
-		if (this.state.game != null){
-			if (this.state.cur_ship==this.state.game.max_ships-1) {
-				this.sendSocketMessage({action: "ready_to_start", game_id: this.state.game.id});
-				this.setState({ player_ready: true, cur_ship: 0});
+		if ((this.state.player_num == 1 && (this.state.game.p1_ship_count==this.state.cur_ship+1)) || (this.state.player_num == 2 && (this.state.game.p2_ship_count==this.state.cur_ship+1))) {
+			this.setState({ cur_ship: this.state.cur_ship+1})
+			this.sendSocketMessage({action: 'confirm', game_id: this.props.game_id})
+			if (this.state.game != null){
+				if (this.state.cur_ship==this.state.game.max_ships-1) {
+					this.sendSocketMessage({action: "ready_to_start", game_id: this.state.game.id});
+					this.setState({ player_ready: true, cur_ship: 0});
+				}
 			}
+			this.getGame()
 		}
-		this.getGame()
 	}
 	
 	//requests game + cell + player information from backend
