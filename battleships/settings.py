@@ -144,3 +144,5 @@ WEBPACK_LOADER = {
  
     }
 }
+LOGIN_REDIRECT_URL = '/lobby/'
+LOGIN_URL = '/login/'
