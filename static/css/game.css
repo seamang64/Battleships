@@ -86,7 +86,7 @@ table td {
 .navbar-brand {
    font-family:Britannic;
    font-size:200%;
-   color:#7777aa !important;
+   color:#337ab7 !important;
 }
 
 .navbar-brand:hover {
@@ -97,7 +97,7 @@ table td {
 .nav-link {
   font-family:Britannic;
   font-size:140%;
-  color:#7777aa !important;
+  color:#337ab7 !important;
 }
 
 .nav-link:hover {
@@ -108,10 +108,15 @@ table td {
 .navbar-text  {
  font-family:Britannic;
  font-size:140%;
- color:#7777aa !important;
+ color:#337ab7 !important;
 }
 
 /* This should hopefully set everything to the same font */
-h3,h4,li,th,td,div,p,label,span,hr {
+h3,h4{
    font-family:Britannic;
 }
+/* This could be used to change the colour of the boxes in the lobby*/
+/*.panel {background-color:#??????;border-color:#??????;}*/
+/*.panel-primary {background-color:#;border-color:#337ab7;}*/
+/*.panel-heading {background-color:#337ab7;border-color:#337ab7;}*/
+/*.panel-body {background-color:#??????;border-top-color:#337ab7;border-bottem-color:#337ab7;}*/
