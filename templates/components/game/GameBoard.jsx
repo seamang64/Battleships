@@ -225,7 +225,7 @@ class GameBoard extends Component {
             <div className="row">
                 <div className="col-sm-6"> 
                     {this.instruction()}
-                    <table>
+                    <table className="game">
 					<thead>
 						<tr>
 						  <th>Your Board:</th>
