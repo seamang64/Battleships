@@ -81,3 +81,37 @@ table td {
 .opponent-color {
   background-color: #FF4C22;
 }
+
+/* This changes the word Battleships */
+.navbar-brand {
+   font-family:Britannic;
+   font-size:200%;
+   color:#7777aa !important;
+}
+
+.navbar-brand:hover {
+  color:#ffffff !important;
+}
+
+/* This changes the links lobby, logout, register and login */
+.nav-link {
+  font-family:Britannic;
+  font-size:140%;
+  color:#7777aa !important;
+}
+
+.nav-link:hover {
+   color:#ffffff !important;
+}
+
+/*This changes the welcome message*/
+.navbar-text  {
+ font-family:Britannic;
+ font-size:140%;
+ color:#7777aa !important;
+}
+
+/* This should hopefully set everything to the same font */
+h3,h4,li,th,td,div,p,label,span,hr {
+   font-family:Britannic;
+}
