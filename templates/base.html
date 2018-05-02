@@ -12,8 +12,8 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
         crossorigin="anonymous">
  
-    <!-- LOCAL CSS 
-    <link rel="stylesheet" href="{% static "css/game.css " %}"> {% block additional_head %}{% endblock %}-->
+    <!-- LOCAL CSS --> 
+    <link rel="stylesheet" href="{% static "css/game.css " %}"> {% block additional_head %}{% endblock %}
 </head>
  
 <body style="padding-top:65px;">
@@ -31,11 +31,11 @@
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav">
                     {% if request.user.is_authenticated %}
-                        <li><a href="/lobby/">Lobby</a></li>
-                        <li><a href="/logout/">Logout</a></li>
+                        <li><a href="/lobby/" class="nav-link">Lobby</a></li>
+                        <li><a href="/logout/" class="nav-link">Logout</a></li>
                     {% else %}
-                        <li><a href="/register/">Register</a></li>
-                        <li><a href="/login/">Login</a></li>
+                        <li><a href="/register/" class="nav-link">Register</a></li>
+                        <li><a href="/login/" class="nav-link">Login</a></li>
                     {% endif %}
                 </ul>
                 {% if request.user.is_authenticated %}
