@@ -7,8 +7,8 @@ class CreateForm extends React.Component{
       this.state = {
 			height: 10,
 			width: 10,
-			size1: 1,
-			size2: 1,
+			size1: 0,
+			size2: 2,
 			size3: 1,
 			size4: 1,
 			size5: 1,
