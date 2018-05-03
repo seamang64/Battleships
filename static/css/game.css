@@ -42,44 +42,27 @@ div {
   position: absolute;
 }
  
-table{
+table.main{
   border:2px solid #3b3a6e;
- 
 }
-table td {
+table.main td {
   position:relative;
   border:1px solid #3b3a6e;
-  
+  padding: 2px;
 }
  
- 
+table.game {
+	border:2px solid #3b3a6e;
+}
+
+table.game td{
+	position:relative;
+    border:0px solid #3b3a6e;
+}
 .player-line{
    font-size:20px; 
    line-height:80px;
    margin:5px;
-}
- 
-.coords{
-  top:0;
-  left:0;
-   position: absolute; 
-   z-index: 999;
-    font-size: 10px;
-  color: rgb(120, 120, 200);
-}
- 
- 
-.player-badge{
-  display:block;
-  margin-right:15px;
-}
- 
-.creator-color {
-  background-color: #00ABD0;
-}
- 
-.opponent-color {
-  background-color: #FF4C22;
 }
 
 /* This changes the word Battleships */
@@ -105,7 +88,7 @@ table td {
 }
 
 /*This changes the welcome message*/
-.navbar-text  {
+.navbar-text  {
  font-family:Britannic;
  font-size:140%;
  color:#337ab7 !important;
@@ -115,8 +98,3 @@ table td {
 h3,h4{
    font-family:Britannic;
 }
-/* This could be used to change the colour of the boxes in the lobby*/
-/*.panel {background-color:#??????;border-color:#??????;}*/
-/*.panel-primary {background-color:#;border-color:#337ab7;}*/
-/*.panel-heading {background-color:#337ab7;border-color:#337ab7;}*/
-/*.panel-body {background-color:#??????;border-top-color:#337ab7;border-bottem-color:#337ab7;}*/
