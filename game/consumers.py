@@ -57,7 +57,7 @@ class LobbyConsumer(WebsocketConsumer):
 			shipyard = content['shipyard']
 			max = int(shipyard[0]) + int(shipyard[1]) + int(shipyard[2]) + int(shipyard[3]) + int(shipyard[4])
 			#creates the game
-			game = Game.create_new_game(player, content['height'], content['width'], max, content['shipyard'],True)
+			game = Game.create_new_game(player, content['width'], content['height'], max, content['shipyard'],True)
 			#creates a new bot
 			i = 0
 			while User.objects.filter(username='bot{0}'.format(i)).exists():
