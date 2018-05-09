@@ -283,7 +283,8 @@ class GameConsumer(JsonWebsocketConsumer):
 				Game.set_ship_count(content['game_id'],game.p2,ship_count)
 			#this part runs regardless of if its a bot game
 			Game.set_ready(content['game_id'], self.scope['user'].id)
-			self.send(text_data=json.dumps({'instruction': 'update'}))
+			async_to_sync(self.channel_layer.group_send)('user-' + str(game.p1.id),{'type': 'update'})
+			async_to_sync(self.channel_layer.group_send)('user-' + str(game.p2.id),{'type': 'update'})
 			
 		if action == 'get_turn':
 			self.send(text_data=json.dumps({'player_turn': '{0}'.format(Game.get_game(content['game_id']).player_turn)}))
